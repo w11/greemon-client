@@ -78,101 +78,7 @@ Für die Erst-Inbetriebnahme eines Gerätes wird ein Computer und ein Programm z
 
 Ausserdem: GIT zur Versionierung, Projektplan, Pflichtenheft, Use-Case-Diagramme
 
-\newpage
-\section{Konzept}
-\subsection{Client}
 
-\begin{figure}[htbp] 
-  \centering
-     \includegraphics[width=1\textwidth]{Skizze_Quickstartguide_numeriert.jpg}
-  \caption{Greemon Konzept - Client}
-  \label{fig:Bild1}
-\end{figure}
-
-\begin{enumerate}
-  
-  \item Das erhaltene Gerät aus der Verpackung befreien 
-  
-  \item Einsetzen der Batterie 
-  \begin{enumerate}
-    \item  Eine auf dem Gerät befindliche rote LED indiziert den unkonfigurierten Status des Gerätes. Diese Leuchtet solange:
-    \begin{enumerate}
-      \item Keine Verbindung mit dem Server besteht oder 
-      \item Keine Konfiguration vorliegt
-    \end{enumerate}
-  \end{enumerate}
-  
-  \item Verbinden mit der USB Schnittstelle des Computers 
-    \begin{enumerate}
-      \item Die Konfiguration des Gerätes erfolgt durch eine USB Verbindung, die durch einen virtuellen COM Port die Verbindung zum Gerät herstellt. 
-    \end{enumerate}
-    
-  \item Konfigurieren 
-  \begin{enumerate}
-    \item Unterscheidung zwischen bereits konfiguriertem Gerät und einem neu zu konfigurierendem Gerät 
-    \item Bei erster Verwendung 
-        \begin{enumerate}
-            \item Anzeige aller in Reichweite befindlichen WLAN Netzwerke mit Signalstärke und Verschlüsselungstyp 
-            \item Auswahl des Netzwerkes und Eingabe des Passwortes 
-            \item Eingabe der Server-Adresse 
-            \item Anzeige des vom Server erhaltenen/generierten Registrierungsschlüssels 
-        \end{enumerate}
-    \item Bei bereits registriertem Gerät mit Verbindung zum Server 
-        \begin{enumerate}
-            \item Anzeige des Gerätenamens 
-            \item Anzeige Registrierungsschlüssel 
-            \item Anzeige Serveradresse 
-            \item Anzeige WLAN Konfiguration und Signalstärke 
-            \item Biete Löschung der Konfiguration an 
-        \end{enumerate}  
-    \item Bei bereits registriertem Gerät ohne Verbindung zum Server
-        \begin{enumerate}
-            \item Anzeige des Gerätenamens
-            \item Anzeige Registrierungsschlüssel 
-            \item Anzeige Serveradresse 
-            \item Anzeige WLAN Konfiguration 
-            \item Anzeige der letzten Verbindung und Internetstatus 
-            \item Biete Löschung der Konfiguration an 
-        \end{enumerate}        
-    \end{enumerate}
-        
-    \item Verbindungsaufbau und Initialisierung
-    \begin{enumerate}
-        \item Verbindung mit dem Sever wird hergestellt. 
-        \item Synchronisierung der Uhr mit einem NTP Server. 
-        \item Anmeldung des Gerätes 
-            \begin{enumerate}
-                \item Die Identifikationsnummer des Gerätes wird übermittelt. 
-                \item Ein Registrierungsschlüssel wird angezeigt             
-            \end{enumerate}
-    \end{enumerate}      
-        
-    \item Eingabe des Registrierungsschlüssels im Webinterface    
-    \begin{enumerate}
-        \item Die Eingabe des Schlüssels dient zum Verbinden des Gerätes mit einem Benutzerkonto.  
-    \end{enumerate}
-    
-    \item Örtliche Platzierung des Gerätes in der Erde in der Nähe der Pflanze.  
-    
-    \item Sammeln von abiotischen Daten und Senden an den Server
-    \begin{enumerate}
-    \item Zyklische Übermittlung der gesammelten Werte. Auslesen von den Sensoren 
-        \begin{enumerate}
-        \item Bodenfeuchtigkeit 
-        \item Luftfeuchtigkeit 
-        \item CO2 Luft-Konzentration 
-        \item Lichtintensität 
-        \item Umgebungstemperatur 
-        \item Ladezustand der Batterie 
-        \end{enumerate}
-    \item Anfügen der Werte an die der zu sendenden Werte 
-    \item Senden der Werte-Sammlung an den Server und löschen der Werte bei erfolgreicher Übermittlung.
-    \end{enumerate}
-    
-    \item Anzeige der gesammelten Daten in der Web-Oberfläche.
-  
-\end{enumerate}
-  
 \subsection{Server}
 
 \begin{figure}[htbp] 
@@ -286,8 +192,129 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
 
 
 
-\newpage
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% USE-CASE Diagramme
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Use-Case Diagramme}
+\subsection{Allgemeines Use-Case Diagramm}
+\begin{figure}[htbp] 
+  \centering
+     \includegraphics[width=1\textwidth]{usecase_client_allgemein.jpg}
+  \caption{Greemon Client - Use-Case Allgemein}
+  \label{fig:Bild1}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PRODUKTFUNKTIONEN
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Produktfunktionen}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Grobentwurf des Systems
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\subsection{Grobentwurf}
+
+\begin{figure}[htbp] 
+  \centering
+     \includegraphics[width=1\textwidth]{Skizze_Quickstartguide_numeriert.jpg}
+  \caption{Greemon Konzept - Client}
+  \label{fig:Bild1}
+\end{figure}
+
+\begin{enumerate}
+  
+  \item Das erhaltene Gerät aus der Verpackung befreien 
+  
+  \item Einsetzen der Batterie 
+  \begin{enumerate}
+    \item  Eine auf dem Gerät befindliche rote LED indiziert den unkonfigurierten Status des Gerätes. Diese Leuchtet solange:
+    \begin{enumerate}
+      \item Keine Verbindung mit dem Server besteht oder 
+      \item Keine Konfiguration vorliegt
+    \end{enumerate}
+  \end{enumerate}
+  
+  \item Verbinden mit der USB Schnittstelle des Computers 
+    \begin{enumerate}
+      \item Die Konfiguration des Gerätes erfolgt durch eine USB Verbindung, die durch einen virtuellen COM Port die Verbindung zum Gerät herstellt. 
+    \end{enumerate}
+    
+  \item Konfigurieren 
+  \begin{enumerate}
+    \item Unterscheidung zwischen bereits konfiguriertem Gerät und einem neu zu konfigurierendem Gerät 
+    \item Bei erster Verwendung 
+        \begin{enumerate}
+            \item Anzeige aller in Reichweite befindlichen WLAN Netzwerke mit Signalstärke und Verschlüsselungstyp 
+            \item Auswahl des Netzwerkes und Eingabe des Passwortes 
+            \item Eingabe der Server-Adresse 
+            \item Anzeige des vom Server erhaltenen/generierten Registrierungsschlüssels 
+        \end{enumerate}
+    \item Bei bereits registriertem Gerät mit Verbindung zum Server 
+        \begin{enumerate}
+            \item Anzeige des Gerätenamens 
+            \item Anzeige Registrierungsschlüssel 
+            \item Anzeige Serveradresse 
+            \item Anzeige WLAN Konfiguration und Signalstärke 
+            \item Biete Löschung der Konfiguration an 
+        \end{enumerate}  
+    \item Bei bereits registriertem Gerät ohne Verbindung zum Server
+        \begin{enumerate}
+            \item Anzeige des Gerätenamens
+            \item Anzeige Registrierungsschlüssel 
+            \item Anzeige Serveradresse 
+            \item Anzeige WLAN Konfiguration 
+            \item Anzeige der letzten Verbindung und Internetstatus 
+            \item Biete Löschung der Konfiguration an 
+        \end{enumerate}        
+    \end{enumerate}
+        
+    \item Verbindungsaufbau und Initialisierung
+    \begin{enumerate}
+        \item Verbindung mit dem Sever wird hergestellt. 
+        \item Synchronisierung der Uhr mit einem NTP Server. 
+        \item Anmeldung des Gerätes 
+            \begin{enumerate}
+                \item Die Identifikationsnummer des Gerätes wird übermittelt. 
+                \item Ein Registrierungsschlüssel wird angezeigt             
+            \end{enumerate}
+    \end{enumerate}      
+        
+    \item Eingabe des Registrierungsschlüssels im Webinterface    
+    \begin{enumerate}
+        \item Die Eingabe des Schlüssels dient zum Verbinden des Gerätes mit einem Benutzerkonto.  
+    \end{enumerate}
+    
+    \item Örtliche Platzierung des Gerätes in der Erde in der Nähe der Pflanze.  
+    
+    \item Sammeln von abiotischen Daten und Senden an den Server
+    \begin{enumerate}
+    \item Zyklische Übermittlung der gesammelten Werte. Auslesen von den Sensoren 
+        \begin{enumerate}
+        \item Bodenfeuchtigkeit 
+        \item Luftfeuchtigkeit 
+        \item CO2 Luft-Konzentration 
+        \item Lichtintensität 
+        \item Umgebungstemperatur 
+        \item Ladezustand der Batterie 
+        \end{enumerate}
+    \item Anfügen der Werte an die der zu sendenden Werte 
+    \item Senden der Werte-Sammlung an den Server und löschen der Werte bei erfolgreicher Übermittlung.
+    \end{enumerate}
+    
+    \item Anzeige der gesammelten Daten in der Web-Oberfläche.
+  
+\end{enumerate}
+
+\subsection{Konzept des Aufbaus}
+    Wird ergänzt - Skizze des Mikrocontrollers mit angeschlossenen Sensoren, in der Erde neben einer Pflanze steckend.
+
+%%
+%%  TODO: ERGÄNZEN
+%%
+
 
 \subsection{Funktionale Anforderungen}
 
