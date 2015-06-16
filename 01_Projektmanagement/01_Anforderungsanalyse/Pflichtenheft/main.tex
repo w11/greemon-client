@@ -12,6 +12,7 @@
 \usepackage{varioref}
 \usepackage{prettyref}
 \usepackage{nameref}
+\usepackage{listings}
 %\usepackage{hyperref}
 %\hypersetup{pdfborder={0 0 0}}
 
@@ -83,7 +84,7 @@ Ausserdem: GIT zur Versionierung, Projektplan, Pflichtenheft, Use-Case-Diagramme
 
 \begin{figure}[htbp] 
   \centering
-     \includegraphics[width=1\textwidth]{wireframe-web.jpg}
+     \includegraphics[width=1\textwidth]{images/wireframe-web.jpg}
   \caption{Greemon Konzept - Web Mockup}
   \label{fig:greemon-web-mockup}
 \end{figure}
@@ -151,7 +152,7 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %
-% Pflichtenheft
+% Pflichtenheft Client
 %
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -165,11 +166,11 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
 
 \section{Zielbestimmung}
 \subsection{Musskriterien}
-        Ziel der Projektarbeit ist es ein Gerät zu entwickeln, dass die abiotischen Sensorwerte für eine Zimmerpflanze zyklisch zu ermitteln und an einen Server weiterzuleiten. Die zu beobachtenden Werte sind: Luftfeuchtigkeit, Bodenfeuchtigkeit, Lichtintensität, Umgebungstemperatur.
-        Dazu werden die Wertebereiche der Sensoren evaluiert (Beinhaltet das Verifizieren der Funktionalität so wie das Untersuchen der im Datenblatt angegebenen Grenzwerte wie z.B. Datenrate und Genauigkeit). Das Format der Datenübertragung zum Server wird festgelegt. Die Reichweite des CC3200 Chips, so wie die Verlustrate ab bestimmten Distanzen und Umgebungen ermittelt. 
-    Es wird eine Lösung zum Speichern der Konfigurationsdatei und gesammelten Sensorwerten gesucht und implementiert. Das Gerät muss eine Möglichkeit besitzen Sensorwerte zu speichern, falls keine Verbindung zum Server besteht, um diese zu einem späteren Zeitpunkt zu übertragen.
+        Ziel der Projektarbeit ist es ein Gerät zu entwickeln, dass die abiotischen Sensorwerte für eine Zimmerpflanze zyklisch auszulesen und an einen Server weiterzuleiten. Die zu beobachtenden Werte sind: Luftfeuchtigkeit, Bodenfeuchtigkeit, Lichtintensität, Umgebungstemperatur.
+        Dazu werden die \textbf{Wertebereiche der Sensoren evaluiert} (Beinhaltet das Verifizieren der Funktionalität so wie das Untersuchen der im Datenblatt angegebenen Grenzwerte wie z.B. Datenrate und Genauigkeit). \textbf{Das Format der Datenübertragung zum Server} wird festgelegt. Die \textbf{Reichweite des CC3200 Chips, so wie die Verlustrate} ab bestimmten Distanzen und Umgebungen ermittelt. 
+    Es wird eine Lösung zum \textbf{Speichern der Konfigurationsdatei} und zum temporären \textbf{Speichern gesammelter Sensorwerte} gesucht und implementiert. Das Gerät muss eine Möglichkeit besitzen Sensorwerte zu speichern, falls keine Verbindung zum Server besteht, um diese zu einem späteren Zeitpunkt zu übertragen.
 \subsection{Wunschkriterien}
-    Entwicklung einer Platine für eine Stromversorgung über eine Batterie. Sensor zum auslesen der CO2 Konzentration in der Luft. Konfiguration über eine Weboberfläche.
+    Entwicklung einer Platine für eine Stromversorgung über eine Batterie. Sensor zum auslesen der CO2 Konzentration in der Luft. Konfiguration über eine Weboberfläche. Energie-Management für eine effizientere Akkulaufzeit.
 \subsection{Abgrenzungskriterien}
     Eine Interpretation der gesammelten Daten erfolgt nicht durch den Mikrocontroller.
     Die Konfiguration des Mikrocontrollers umfasst nur zur Übertragung an den Server benötigte Daten.
@@ -183,10 +184,10 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
     % TODO: Professor (Bewertet die Arbeit), Otto-Normalverbraucher
     %
 \subsection{Bedingungen}
-    Das Gerät wird nicht im Außenbereich benutzt. Eine Stromquelle steht zur Verfügung, wenn das Gerät ohne Batterie betrieben wird.
+    Das Gerät wird nicht im Außenbereich benutzt. Eine Stromquelle steht zur Verfügung, wenn das Gerät ohne Batterie betrieben wird. Das WLAN-Netzwerk befindet sich in Reichweite.
 \section{Produktumgebung}
 \subsection{Software}
-    Treibern zum emulieren eines virtuellen COM-Ports, so wie eine Software für die Ausgaben des Konfigurationsdialogs - Bevorzugt Putty.
+    Treiber zum emulieren eines virtuellen COM-Ports, so wie eine Software für die Ausgaben des Konfigurationsdialogs (bevorzugt Putty) müssen auf dem System installiert sein.
 \subsection{Hardware}
     USB Port zum Anschluss des Gerätes, so wie ein Micro-USB-Kabel. Konfigurierter WLAN-Access-Point mit Internetverbindung. Eine zu beobachtende Zimmerpflanze.
 
@@ -201,9 +202,9 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
 \subsection{Allgemeines Use-Case Diagramm}
 \begin{figure}[htbp] 
   \centering
-     \includegraphics[width=1\textwidth]{usecase_client_allgemein.jpg}
+     \includegraphics[width=1\textwidth]{images/usecase_client_allgemein.jpg}
   \caption{Greemon Client - Use-Case Allgemein}
-  \label{fig:Bild1}
+  \label{fig:usecase_client_general}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -219,7 +220,7 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
 
 \begin{figure}[htbp] 
   \centering
-     \includegraphics[width=1\textwidth]{Skizze_Quickstartguide_numeriert.jpg}
+     \includegraphics[width=1\textwidth]{images/Skizze_Quickstartguide_numeriert.jpg}
   \caption{Greemon Konzept - Client}
   \label{fig:Bild1}
 \end{figure}
@@ -228,7 +229,7 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
   
   \item Das erhaltene Gerät aus der Verpackung befreien 
   
-  \item Einsetzen der Batterie 
+  \item Einsetzen der Batterie oder 
   \begin{enumerate}
     \item  Eine auf dem Gerät befindliche rote LED indiziert den unkonfigurierten Status des Gerätes. Diese Leuchtet solange:
     \begin{enumerate}
@@ -250,7 +251,7 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
             \item Anzeige aller in Reichweite befindlichen WLAN Netzwerke mit Signalstärke und Verschlüsselungstyp 
             \item Auswahl des Netzwerkes und Eingabe des Passwortes 
             \item Eingabe der Server-Adresse 
-            \item Anzeige des vom Server erhaltenen/generierten Registrierungsschlüssels 
+            \item Anzeige des vom Server erhaltenen/generierten Registrierungsschlüssels. Dies erfordert eine Authentifizerung zum Server. Erst wenn die Daten korrekt sind, werdne die Daten übernommen.
         \end{enumerate}
     \item Bei bereits registriertem Gerät mit Verbindung zum Server 
         \begin{enumerate}
@@ -282,9 +283,9 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
             \end{enumerate}
     \end{enumerate}      
         
-    \item Eingabe des Registrierungsschlüssels im Webinterface    
+    \item Eingabe des Registrierungsschlüssels im Server-Webinterface    
     \begin{enumerate}
-        \item Die Eingabe des Schlüssels dient zum Verbinden des Gerätes mit einem Benutzerkonto.  
+        \item Die Eingabe des Schlüssels dient zum logischen Verknüpfen des Gerätes mit einem Benutzerkonto.  
     \end{enumerate}
     
     \item Örtliche Platzierung des Gerätes in der Erde in der Nähe der Pflanze.  
@@ -293,15 +294,15 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
     \begin{enumerate}
     \item Zyklische Übermittlung der gesammelten Werte. Auslesen von den Sensoren 
         \begin{enumerate}
-        \item Bodenfeuchtigkeit 
-        \item Luftfeuchtigkeit 
-        \item CO2 Luft-Konzentration 
-        \item Lichtintensität 
-        \item Umgebungstemperatur 
-        \item Ladezustand der Batterie 
+        \item Bodenfeuchtigkeit (Muss)
+        \item Luftfeuchtigkeit (Muss)
+        \item CO2 Luft-Konzentration (Gewünscht)
+        \item Lichtintensität (Muss)
+        \item Umgebungstemperatur (Muss)
+        \item Ladezustand der Batterie (Gewünscht)
         \end{enumerate}
     \item Anfügen der Werte an die der zu sendenden Werte 
-    \item Senden der Werte-Sammlung an den Server und löschen der Werte bei erfolgreicher Übermittlung.
+    \item Senden der Werte-Sammlung an den Server und löschen der Werte bei erfolgreicher Übermittlung. Beinhaltet die Überprüfung einer Konnektivität zum Server. Dazu wird ein PING-Paket zum Server gesendet. Antwortet der Server mit einem Pong Packet, so können die Werte übermittelt werden.
     \end{enumerate}
     
     \item Anzeige der gesammelten Daten in der Web-Oberfläche.
@@ -309,11 +310,7 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
 \end{enumerate}
 
 \subsection{Konzept des Aufbaus}
-    Wird ergänzt - Skizze des Mikrocontrollers mit angeschlossenen Sensoren, in der Erde neben einer Pflanze steckend.
-
-%%
-%%  TODO: ERGÄNZEN
-%%
+Siehe Abbildung \ref{fig:Bild1}, Nummer 7. Das Gerät steckt in der Erde der zu beobchtenden Pflanze.
 
 
 \subsection{Funktionale Anforderungen}
@@ -378,30 +375,30 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
     
     \subsubsection{Inbetriebnahme}
     \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
-    Funktion-ID     & \requirement{req:greemon_startup}
-                    \\ \hline
-    Name            & Inbetriebnahme
-                    \\ \hline
-    Akteuere        & Benutzer, Greemon
-                    \\ \hline
-    Ziel            & Das Gerät wird vom Benutzer in Betrieb genommen.
-                    \\ \hline
-    Einordnung      & Initialisierung 
-                    \\ \hline
-    Vorbedingungen  & Stromquelle angeschlossen 
-                    \\ \hline
-    Standardablauf  & Der Greemon startet automatisch, sobald eine Stromquelle angeschlossen wurde.
-                    \\ \hline
-    Nachbedingungen & Startet den Initialisierungsprozess \ref{req:init_greemon}
-                    \\ \hline
-    Fehler          & Keine 
-                    \\ \hline
-    Verzweigungen   & Keine 
-                    \\ \hline
-    Anmerkungen     & Keine 
-                    \\ \hline
-    Offene Fragen   & Keine
-                    \\ \hline
+    Funktion-ID         & \requirement{req:greemon_startup}
+                        \\ \hline
+    Name                & Inbetriebnahme
+                        \\ \hline
+    Akteuere            & Benutzer
+                        \\ \hline
+    Ziel                & Das Gerät wird vom Benutzer in Betrieb genommen.
+                        \\ \hline
+    Einordnung          & Initialisierung 
+                        \\ \hline
+    Vorbedingungen      & Stromquelle angeschlossen 
+                        \\ \hline
+    Standardablauf      & Der Greemon startet automatisch, sobald eine Stromquelle angeschlossen wurde.
+                        \\ \hline
+    Nachbedingungen     & Startet den Initialisierungsprozess \ref{req:init_greemon}
+                        \\ \hline
+    Fehler              & Keine Stromquelle vorhanden.
+                        \\ \hline
+    Verzweigungen       & Keine 
+                        \\ \hline
+    Anmerkungen         & Keine 
+                        \\ \hline
+    Offene Fragen       & Keine
+                        \\ \hline
  \end{tabular}
  
  
@@ -416,31 +413,37 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
  \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
     Funktion-ID         &\requirementGroup{req:init_greemon}
                         \\ \hline
-    Name                & Initialisierung Greemon
+    Name                &   Initialisierung Greemon
                         \\ \hline
-    Akteuere            & Greemon, NTP-Server, Greemon-Server
+    Akteuere            &   NTP-Server, Greemon-Server
                         \\ \hline
-    Ziel                & Das Gerät ist betriebsbereit. 
+    Ziel                &   Das Gerät ist konfigurierbar  
+                            oder die Konfiguration wurde geladen. 
+                            und Sensorwerte können an den Server übertragen werden. Der Interrupthandler wurde initialisiert.
                         \\ \hline
-    Einordnung          & Initialisierung 
+    Einordnung          &   Initialisierung 
                         \\ \hline
-    Vorbedingungen      & \ref{req:greemon_startup} Anschalten
+    Vorbedingungen      &   \ref{req:greemon_startup} Anschalten.
+                            \ref{req:cfg} Konfiguration wurde durchgeführt.
                         \\ \hline
-    Standardablauf      & Starten von \ref{req:init_wlan} Initialisierung WLAN, 
+    Standardablauf      &   Starten von \ref{req:init_serial} Initialisierung der serien Schnittstelle.
+                            Starten von \ref{req:init_wlan} Initialisierung WLAN, 
                             Starten von \ref{req:init_sensors} initialisierung Sensoren, 
-                            Starten von \ref{req:init_clock} Initialisierung Uhrzeit 
+                            Starten von \ref{req:init_clock} Initialisierung der internen Systemuhr.
+
                         \\ \hline
-    Nachbedingungen     & Gerät kann sich nun am Server authentifizieren.
+    Nachbedingungen     &  Alle Initialisierungen müssen erfolgreich abgeschlossen worden sein. Gerät kann sich dann am Server authentifizieren.
+                            Die rote LED erlischt.
                         \\ \hline
     Fehler              &   WLAN konnte nicht initialisiert werden,
                             Es besteht keine Verbindung zum Internet,
                             Der NTP Server konnte nicht erreicht werden.
                         \\ \hline
-    Verzweigungen       & Überprüfung, ob das gerät bereits vom Benutzer konfiguriert wurde.
+    Verzweigungen       &   Überprüfung, ob das gerät bereits vom Benutzer konfiguriert wurde.
                         \\ \hline
-    Anmerkungen         & Keine 
+    Anmerkungen         &   Eine rote LED indiziert den Status und erlischt, wenn das Gerät betriebsbereit ist. 
                         \\ \hline
-    Offene Fragen       & Keine
+    Offene Fragen       &   Keine
                         \\ \hline
  \end{tabular}
  
@@ -457,11 +460,11 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
                         \\ \hline
     Einordnung          & Initialisierung 
                         \\ \hline
-    Vorbedingungen      & \ref{req:init_greemon} 
+    Vorbedingungen      & \ref{req:init_greemon} Greemon-Initialisierung gestartet
                         \\ \hline
-    Standardablauf      & Laden der WLAN Konfiguration. Verbinden mit dem WLAN Netzwerk
+    Standardablauf      & Laden der WLAN Konfiguration. Verbinden mit dem WLAN Netzwerk.
                         \\ \hline
-    Nachbedingungen     & Gerät ist betriebsbereit. 
+    Nachbedingungen     & Internetverbindung besteht. 
                         \\ \hline
     Fehler              & Es liegen keine Konfigurationsdaten für das WLAN-Netzwerk vor. 
                         \\ \hline
@@ -469,97 +472,96 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
                         \\ \hline
     Anmerkungen         & Keine 
                         \\ \hline
-    Offene Fragen       & Welche Verschlüsselungsstandards sollen unterstützt werden? (Offen, WEP, WPA, WPA2)
+    Offene Fragen       & Welche Verschlüsselungsstandards sollen unterstützt werden (Offen, WEP, WPA, WPA2)?
                         \\ \hline
  \end{tabular} 
  
  
  \subsubsection{Initialisierung Sensoren}
  \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
-    Funktion-ID     &\requirementSubGroup{req:init_sensors} 
-                    \\ \hline
-    Name            &  Initialisierung Sensoren
-                    \\ \hline
-    Akteuere        & Greemon 
-                    \\ \hline
-    Ziel            & Das Gerät ist betriebsbereit. 
-                    \\ \hline
-    Einordnung      & Initialisierung 
-                    \\ \hline
-    Vorbedingungen  & /F0100/ 
-                    \\ \hline
-    Standardablauf  & 
-                    \\ \hline
-    Nachbedingungen & Gerät ist betriebsbereit. 
-                    \\ \hline
-    Fehler          & Keine 
-                    \\ \hline
-    Verzweigungen   & Keine 
-                    \\ \hline
-    Anmerkungen     & Keine 
-                    \\ \hline
-    Offene Fragen   & Können die Sensoren einfach ausgelesen werden, oder wird eine größere Routine (Wartezeiten,..) benötigt?
-                    \\ \hline
+    Funktion-ID         &\requirementSubGroup{req:init_sensors} 
+                        \\ \hline
+    Name                &  Initialisierung Sensoren
+                        \\ \hline
+    Akteuere            & Greemon 
+                        \\ \hline
+    Ziel                & Das Gerät ist betriebsbereit. 
+                        \\ \hline
+    Einordnung          & Initialisierung 
+                        \\ \hline
+    Vorbedingungen      & \ref{req:init_greemon} Greemon-Initialisierung gestartet
+                        \\ \hline
+    Standardablauf      & /TODO
+                        \\ \hline
+    Nachbedingungen     &  Sensoren können gelesen werden. 
+                        \\ \hline
+    Fehler              & Keine 
+                        \\ \hline
+    Verzweigungen       & Keine 
+                        \\ \hline
+    Anmerkungen         & Keine 
+                        \\ \hline
+    Offene Fragen       & Können die Sensoren einfach ausgelesen werden, oder wird eine größere Routine (Wartezeiten,..) benötigt?
+                        \\ \hline
  \end{tabular} 
 
  
  \subsubsection{Initialisierung Uhrzeit}
  \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
-    Funktion-ID     &\requirementSubGroup{req:init_clock}  
-                    \\ \hline
-    Name            & Uhrzeit Initialisierung
-                    \\ \hline
-    Akteuere        & Greemon, NTP-Server
-                    \\ \hline
-    Ziel            & Das Gerät hat die aktuellste Uhrzeit empfangen und aktualisiert diese durch einen internen Timer.
-                    \\ \hline
-    Einordnung      & Initialisierung 
-                    \\ \hline
-    Vorbedingungen  &  \ref{req:init_wlan} WLAN initialisiert.
-                        Der Prozess wird durch \ref{req:init_greemon} Initialisierung Greemon gestartet.
-                    \\ \hline
-    Standardablauf  & Aktualisieren der Systemzeit durch NTP Server.
-                        initialisieren des internen Timers.
-                    \\ \hline
-    Nachbedingungen & Gerät ist betriebsbereit. 
-                    \\ \hline
-    Fehler          & Der Server konnte nicht erreicht werden. Der Server hat keine Uhrzeit geliefert. 
-                    \\ \hline
-    Verzweigungen   & Keine 
-                    \\ \hline
-    Anmerkungen     & Keine 
-                    \\ \hline
-    Offene Fragen   &  Welche NTP-Server Adresse wird verwendet?
-                    \\ \hline
+    Funktion-ID         &\requirementSubGroup{req:init_clock}  
+                        \\ \hline
+    Name                & Initialisierung Uhrzeit
+                        \\ \hline
+    Akteuere            & Greemon, NTP-Server
+                        \\ \hline
+    Ziel                & Das Gerät hat die aktuellste Uhrzeit empfangen und aktualisiert diese durch einen internen Timer.
+                        \\ \hline
+    Einordnung          & Initialisierung 
+                        \\ \hline
+    Vorbedingungen      &   \ref{req:init_wlan} WLAN initialisiert.
+                        \ref{req:init_greemon} Greemon-Initialisierung gestartet
+                        \\ \hline
+    Standardablauf      & Aktualisieren der Systemzeit durch NTP Server.
+                        Initialisieren des internen Timers mit einem Interrupt Intervall von 5 Minuten.
+                        \\ \hline
+    Nachbedingungen     & Timer wird gestartet. Interne Systemzeit wird durch diesen internen Timer kontinuierlich aktualisiert.
+                        \\ \hline
+    Fehler              & Der Server konnte nicht erreicht werden. Der Server hat keine Uhrzeit geliefert. 
+                        \\ \hline
+    Verzweigungen       & Keine 
+                        \\ \hline
+    Anmerkungen         & Keine 
+                        \\ \hline
+    Offene Fragen       &  Welche NTP-Server Adresse wird verwendet?
+                        \\ \hline
  \end{tabular} 
  
   \subsubsection{Initialisierung serielle Schnittstelle}
  \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
-    Funktion-ID     &\requirementSubGroup{req:init_serial}  
-                    \\ \hline
-    Name            & Initialisierung Serielle Schnittstelle
-                    \\ \hline
-    Akteuere        & Greemon, Benutzer
-                    \\ \hline
-    Ziel            & Bereitstellen der Schnittstelle zum Konfigurieren des Gerätes.
-                    \\ \hline
-    Einordnung      & Konfiguration
-                    \\ \hline
-    Vorbedingungen  & Der Prozess wird durch \ref{req:init_greemon} Initialisierung Greemon gestartet.
-                    \\ \hline
-    Standardablauf  & Aktualisieren der Systemzeit durch NTP Server.
-                        initialisieren des internen Timers.
-                    \\ \hline
-    Nachbedingungen & Gerät ist betriebsbereit. 
-                    \\ \hline
-    Fehler          & Keine 
-                    \\ \hline
-    Verzweigungen   & Keine 
-                    \\ \hline
-    Anmerkungen     & Keine 
-                    \\ \hline
-    Offene Fragen   &  Welche Baudrate wird verwendet?
-                    \\ \hline
+    Funktion-ID         &  \requirementSubGroup{req:init_serial}  
+                        \\ \hline
+    Name                & Initialisierung Serielle Schnittstelle
+                        \\ \hline
+    Akteuere            & Greemon, Benutzer
+                        \\ \hline
+    Ziel                & Bereitstellen der Schnittstelle zum Konfigurieren des Gerätes.
+                        \\ \hline
+    Einordnung          & Konfiguration
+                        \\ \hline
+    Vorbedingungen      & \ref{req:init_greemon} Greemon-Initialisierung gestartet
+                        \\ \hline
+    Standardablauf      & 
+                        \\ \hline
+    Nachbedingungen     & Gerät ist betriebsbereit. Das Gerät kann konfiguriert werden.
+                        \\ \hline
+    Fehler              & Keine 
+                        \\ \hline
+    Verzweigungen       & Keine 
+                        \\ \hline
+    Anmerkungen         & Keine 
+                        \\ \hline
+    Offene Fragen       &  Welche Baudrate wird verwendet?
+                        \\ \hline
  \end{tabular} 
  
 
@@ -577,18 +579,22 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
                         \\ \hline
     Akteuere            & Greemon
                         \\ \hline
-    Ziel                & Initialisierungswerte setzen. Oberfläche für den Benutzer bereitstellen. 
+    Ziel                & Initialisierungswerte setzen. Konfigurationsoberfläche für den Benutzer bereitstellen. 
                         \\ \hline
     Einordnung          & Konfiguration 
                         \\ \hline
-    Vorbedingungen      & /F0100/ 
+    Vorbedingungen      &  \ref{req:init_greemon} Gerät wurde initialisiert. 
+                        \ref{req:init_serial} Serielle Schnittstelle wurde initialisiert.
                         \\ \hline
-    Standardablauf      & Greemon wird via USB an einen Computer angeschlossen. 
+    Standardablauf      &   Greemon wird via USB an einen Computer angeschlossen. 
                             Eine Verbindung wird über eine virtuelle serielle Schnittstelle aufgebaut. 
                             Der Benutzer öffnet ein Programm (Putty) und trägt die Baudrate, so wie den COM Port ein.
-                            Das Gerät antwortet mit einem geführten Konfigurationsdialog.
+                            Das Gerät antwortet mit einem geführten Konfigurationsdialog. 
+                            Der Benutzer bestätigt die Speicherung und erhält einen Registrierungsschlüssel. 
+                            (Wird benötigt um das Gerät mit dem Greemon-Server Benutzer zu Verknüpfen)
                         \\ \hline
-    Nachbedingungen     & Gerät wurde konfiguriert. 
+    Nachbedingungen     & Gerät wurde konfiguriert. Eine Internetverbindung besteht. Am Server authentifiziert. Registrierungsschlüssel erhalten.
+                        \ref{req:cfg_save} wird zum Speichern der Daten ausgeführt.
                         \\ \hline
     Fehler              & Keine 
                         \\ \hline
@@ -605,28 +611,27 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
  \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
     Funktion-ID         & \requirementProcess{req:cfg_save} 
                         \\ \hline
-    Name                & Konfiguration
+    Name                &   Konfiguration
                         \\ \hline
-    Akteuere            & Greemon
+    Akteuere            &   Greemon
                         \\ \hline
-    Ziel                & Initialisierungswerte setzen. Speichert die Daten persistent. 
+    Ziel                &   Initialisierungswerte setzen. Speichert die Daten persistent. 
                         \\ \hline
-    Einordnung          & Konfiguration 
+    Einordnung          &   Konfiguration 
                         \\ \hline
-    Vorbedingungen      & /F0100/ 
+    Vorbedingungen      &   Erfolgreiche Ausführung von \ref{req:cfg} Konfiguration Greemon.
                         \\ \hline
-    Standardablauf      & Greemon wird via USB an einen Computer angeschlossen. Eine Verbindung wird über eine virtuelle                             serielle Schnittstelle aufgebaut. 
-                            Der Benutzer wird durch einen Konfigurationsdialog geführt.  
+    Standardablauf      &  Zeige den durch den Server generierten Registrierungsschlüssel an.
                         \\ \hline
-    Nachbedingungen     & Gerät wurde konfiguriert. 
+    Nachbedingungen     &   Gerät ist betriebsbereit.
                         \\ \hline
-    Fehler              & Keine 
+    Fehler              &   Keine 
                         \\ \hline
-    Verzweigungen       & Keine 
+    Verzweigungen       &   Keine 
                         \\ \hline
-    Anmerkungen         & Keine 
+    Anmerkungen         &   Keine 
                         \\ \hline
-    Offene Fragen       & Wie können die Daten persistent gespeichert werden? 
+    Offene Fragen       &   Wie können die Daten persistent gespeichert werden? 
                             Wie viel Speicherplatz ist auf dem Gerät verfügbar?
                         \\ \hline
  \end{tabular}
@@ -649,19 +654,15 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
                         \\ \hline
     Standardablauf      &  Eingabe des Namens über eine Consolenanwendung. Bestätigung durch Enter-Taste.  
                         \\ \hline
-    Nachbedingungen     &  Eingabe entspricht der erwarteten Form 
-                        \begin{equation}
-                            (A-Z, a-z, 1-9, -, \_) 
-                        \end{equation} und ist nicht länger als X Zeichen.
-                            Ansonsten starte diesen Prozess neu und gebe dem Benutzer eine Fehlermeldung.
+    Nachbedingungen     &   Eingabe Korrekt, ansonsten starte diesen Prozess neu und gebe dem Benutzer eine Fehlermeldung.
                         \\ \hline
-    Fehler              &       
+    Fehler              &  Eingabe entspricht der erwarteten Form.    
                         \\ \hline
     Verzweigungen       &     
                         \\ \hline
     Anmerkungen         &  
                         \\ \hline
-    Offene Fragen       &  Wie viele Zeichen darf der Name enthalten?
+    Offene Fragen       &  Wie viele Zeichen darf der Name enthalten? Welche Zeichen dürfen enthalten sein?
                         \\ \hline
  \end{tabular}  
  
@@ -742,13 +743,14 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
                         \\ \hline
     Einordnung          &  Konfiguration      
                         \\ \hline
-    Vorbedingungen      &  Benutzer hat im Prozess \ref{req:cfg_setNetwork} eine gültige Nummer für ein WLAN Netzwerk ausgewählt. 
-                            Die Daten des ausgewählten Netzwerkes wurden an den Prozess weitergegeben.
+    Vorbedingungen      &  Benutzer hat im Prozess \ref{req:cfg_showNetwork} (Zeige Netzwerkliste) eine gültige Nummer für ein WLAN Netzwerk ausgewählt. 
+                            Die Daten des ausgewählten Netzwerkes wurden an den Prozess weitergegeben. Das ist mindestens die SSID.
                         \\ \hline
-    Standardablauf      &  Überspringe den Prozess, wenn das WLAN-Netzwerk keine Authentifzierung benötigt.
+    Standardablauf      &  Überspringe den Prozess, wenn das WLAN-Netzwerk keine Authentifizierung benötigt.
                             Benutzer trägt zu dem ausgewählten Prozess das Passwort des WLAN Netzwerkes ein.
                         \\ \hline
-    Nachbedingungen     &  -
+    Nachbedingungen     &  Teste Internetverbindung
+                            Gebe E_NOCONN (<0) zurück wenn keine Verbindung besteht. SUCCESS (0) bei erfolgreicher Internetverbindung.
                         \\ \hline
     Fehler              &  -      
                         \\ \hline
@@ -764,17 +766,56 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
  \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
     Funktion-ID         & \requirementSubGroup{req:cfg_Server}  
                         \\ \hline
-    Name                & Konfiguration Greemon-Server Verbindungsdaten             
+    Name                &  Konfiguration Greemon-Server Verbindungsdaten             
+                        \\ \hline
+    Akteuere            &  Greemon, Benutzer
+                        \\ \hline
+    Ziel                &  Die Adresse und der Port unter dem der Server erreichbar ist werden hinterlegt.           
+                        \\ \hline
+    Einordnung          &  Konfiguration     
+                        \\ \hline
+    Vorbedingungen      &  Benutzer hält die Daten zur Eingabe bereit. Die Verbindung mit dem Internet wurde in \ref{req:cfg_setWLAN} Konfiguration WLAN hergestellt.
+                        \\ \hline
+    Standardablauf      &  Aufruf des Dialogs zur Eingabe der Serverdaten \ref{req:cfg_setServerAddress}.  
+                           Aufruf des Diaglogs zur Eingabe der Authentifizierungsdaten \ref{req:cfg_setServerLogin}.  
+                           
+                        Die in den Dialogen eingegebenen Daten werden überprüft. Je nach Fehler wird der Benutzer zurück zu dem jeweiligen Konfigurationsdialog geführt.
+                        \\ \hline
+    Nachbedingungen     &   
+                        \\ \hline
+    Fehler              &  
+                            \begin{itemize}
+                            \item E\_NOSERVER: Keine Verbindung zum Server wegen falschen Daten. 
+                            \item E\_NOCONN: Keine Verbindung zum Server, keine Internetverbindung. 
+                            \item E\_NOAUTH: Falsche Authentifizierungsdaten.
+                            \end{itemize}
+                        \\ \hline
+    Verzweigungen       &  Bei E\_NOSERVER wird Dialog \ref{req:cfg_setServerAddress} wieder aufgerufen.
+                            Bei E\_NOCONN wird Dialog \ref{req:cfg_setWLAN} wieder aufgerufen.
+                            Bei E\_NOAUTH wird Dialog \ref{req:cfg_setServerLogin} wieder aufgerufen.
+                        \\ \hline
+    Anmerkungen         &  -
+                        \\ \hline
+    Offene Fragen       &  Nur IP oder auch Domain erlaubt?   
+                        \\ \hline
+ \end{tabular} 
+
+
+ \subsubsection{Konfiguration Serververbindung : Serverdaten}
+ \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
+    Funktion-ID         & \requirementSubGroup{req:cfg_setServerAddress} 
+                        \\ \hline
+    Name                &              
                         \\ \hline
     Akteuere            & Greemon, Benutzer
                         \\ \hline
     Ziel                &             
                         \\ \hline
-    Einordnung          &  Konfiguration     
+    Einordnung          &  Konfiguration      
                         \\ \hline
     Vorbedingungen      &    
                         \\ \hline
-    Standardablauf      &    
+    Standardablauf      &  Im Dialog wird der Benutzer aufgeforder die Adresse, so wie den Port des Servers anzugeben.  
                         \\ \hline
     Nachbedingungen     &   
                         \\ \hline
@@ -803,38 +844,9 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
                         \\ \hline
     Vorbedingungen      &    
                         \\ \hline
-    Standardablauf      &    
+    Standardablauf      &  Im Dialog wird der Benutzer aufgefordert den Benutzernamen / E-Mail Adresse und sein Passwort für den Server einzugeben.
                         \\ \hline
-    Nachbedingungen     &   
-                        \\ \hline
-    Fehler              &       
-                        \\ \hline
-    Verzweigungen       &     
-                        \\ \hline
-    Anmerkungen         &       
-                        \\ \hline
-    Offene Fragen       &     
-                        \\ \hline
- \end{tabular} 
-
-
- \subsubsection{Konfiguration Serververbindung : Serverdaten}
- \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
-    Funktion-ID         & \requirementSubGroup{req:cfg_setServerAddress} 
-                        \\ \hline
-    Name                &              
-                        \\ \hline
-    Akteuere            & Greemon, Benutzer
-                        \\ \hline
-    Ziel                &             
-                        \\ \hline
-    Einordnung          &  Konfiguration      
-                        \\ \hline
-    Vorbedingungen      &    
-                        \\ \hline
-    Standardablauf      &    
-                        \\ \hline
-    Nachbedingungen     &   
+    Nachbedingungen     &  Eingaben entsprechen der erwarteten Norm. Für E-Mail gilt: Es muss enthalten sein: Ein @-Zeichen, so wie mindestens ein .
                         \\ \hline
     Fehler              &       
                         \\ \hline
@@ -852,36 +864,59 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
 % 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- \subsubsection{/F0300/ - Konnektivität zum Server}
+ \subsubsection{Konnektivität zum Server}
  \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
-   Funktion-ID & /F0301/  \\ \hline
-   Name & Uhrzeit Initialisieren\\ \hline
-   Akteuere & Greemon, NTP-Server\\ \hline
-   Ziel & Das Gerät ist betriebsbereit. \\ \hline
-    Einordnung & Initialisierung \\ \hline
-    Vorbedingungen &  \\ \hline
-    Standardablauf & Laden von WLAN Konfiguration, Server Konfiguration. Aktualisieren der Systemzeit durch NTP Server. Herstellen der Verbindung zum Greemon-Server.\\ \hline
-    Nachbedingungen & Gerät ist betriebsbereit. \\ \hline
-    Fehler & Keine \\ \hline
-    Verzweigungen & Keine \\ \hline
-    Anmerkungen & Keine \\ \hline
-    Offene Fragen & Keine\\ \hline
+   Funktion-ID          & \requirementGroup{req:conn}  
+                        \\ \hline
+   Name                 & Serververbindung
+                        \\ \hline
+   Akteuere             & Greemon, Greemon-Server\\ \hline
+   Ziel                 & 
+                        \\ \hline
+    Einordnung          & Server-Verbindung 
+                        \\ \hline
+    Vorbedingungen      &  
+                        \\ \hline
+    Standardablauf      & 
+                        \\ \hline
+    Nachbedingungen     & 
+                        \\ \hline
+    Fehler              & Keine 
+                        \\ \hline
+    Verzweigungen       & Keine 
+                        \\ \hline
+    Anmerkungen         & Keine 
+                        \\ \hline
+    Offene Fragen       & Keine
+                        \\ \hline
  \end{tabular} 
 
- \subsubsection{/F0301/ - Serverbindung erstellen}
+ \subsubsection{Serverbindung erstellen}
  \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
-   Funktion-ID & /F0301/  \\ \hline
-   Name & Uhrzeit Initialisieren\\ \hline
-   Akteuere & Greemon, NTP-Server\\ \hline
-   Ziel & Das Gerät ist betriebsbereit. \\ \hline
-    Einordnung & Initialisierung \\ \hline
-    Vorbedingungen &  \\ \hline
-    Standardablauf & \\ \hline
-    Nachbedingungen &  \\ \hline
-    Fehler & Keine \\ \hline
-    Verzweigungen &  \\ \hline
-    Anmerkungen &  \\ \hline
-    Offene Fragen & \\ \hline
+   Funktion-ID          & \requirementSubGroup{req:conn_create}  
+                        \\ \hline
+   Name                 & Verbindung zum Greemon-Server herstellen
+                        \\ \hline
+   Akteuere             & Greemon, Greemon-Server
+                        \\ \hline
+   Ziel                 & Die Verbindung zum Server wurde initialisiert. 
+                        \\ \hline
+    Einordnung          & Server-Verbindung
+                        \\ \hline
+    Vorbedingungen      & 
+                        \\ \hline
+    Standardablauf      &
+                        \\ \hline
+    Nachbedingungen     & 
+                        \\ \hline
+    Fehler              & Keine 
+                        \\ \hline
+    Verzweigungen       & 
+                        \\ \hline
+    Anmerkungen         & 
+                        \\ \hline
+    Offene Fragen       &
+                        \\ \hline
  \end{tabular} 
  
  \subsubsection{/F0302/ - Authentifizierung am Greemon-Server}
@@ -894,23 +929,17 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
                         \\ \hline
     Ziel &               Das Gerät ist betriebsbereit. 
                         \\ \hline
-    Einordnung &        Authentification 
+    Einordnung &        Server-Verbindung
                         \\ \hline
-    Vorbedingungen &    \begin{enumerate}
-                            \item Benutzername und Passwort eingetragen und richtig.
-                            \item Gerät ist konfiguriert.
-                            \item WLAN Initialisiert.
-                            \item Verbindung zum Greemon-Server besteht. 
-                        \end{enumerate}
+    Vorbedingungen &    Gerät wurde bereits durch den Benutzer konfiguriert.
+                        WLAN Initialisiert.
                         \\ \hline
     Standardablauf &    
                         \\ \hline
     Nachbedingungen &   
                         \\ \hline
-    Fehler &            \begin{enumerate}
-                        \item Es besteht keine Verbindung zum Server 
-                        \item Das Passwort oder der Benutzername sind falsch
-                        \end{enumerate}
+    Fehler &            Es besteht keine Verbindung zum Server 
+                        Das Passwort oder der Benutzername sind falsch
                         \\ \hline
     Verzweigungen &     
                         \\ \hline
@@ -930,9 +959,9 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
                         \\ \hline
     Ziel &              Senden von unbestimmten Daten an den Server. 
                         \\ \hline
-    Einordnung &        SendDataToServer 
+    Einordnung &        Server-Verbindung
                         \\ \hline
-    Vorbedingungen &    
+    Vorbedingungen &    Sendepuffer ist mit Daten gefüllt
                         \\ \hline
     Standardablauf &    
                         \\ \hline
@@ -950,50 +979,89 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
  
  \subsubsection{/F0311/ - Sende Daten PING}
  \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
-   Funktion-ID & /F0311/  \\ \hline
-   Name & Sende Daten PING\\ \hline
-   Akteuere & Greemon, Greemon-Server\\ \hline
-   Ziel & Senden von einem Ping Packet an den Server \\ \hline
-    Einordnung & SendDataToServer \\ \hline
-    Vorbedingungen &  \\ \hline
-    Standardablauf & \\ \hline
-    Nachbedingungen &  \\ \hline
-    Fehler & Keine \\ \hline
-    Verzweigungen &  \\ \hline
-    Anmerkungen &  \\ \hline
-    Offene Fragen & \\ \hline
+   Funktion-ID          & /F0311/  
+                        \\ \hline
+   Name                 & Sende Daten PING
+                        \\ \hline
+   Akteuere             & Greemon, Greemon-Server
+                        \\ \hline
+   Ziel                 & Senden von einem Ping Packet an den Server 
+                        \\ \hline
+    Einordnung          &  Server-Verbindung 
+                        \\ \hline
+    Vorbedingungen      &   
+                        \\ \hline
+    Standardablauf      &  
+                        \\ \hline
+    Nachbedingungen     &   
+                        \\ \hline
+    Fehler              & Server antwortet nicht auf Ping-Anfrage. 
+                        \\ \hline
+    Verzweigungen       &   
+                        \\ \hline
+    Anmerkungen         &   
+                        \\ \hline
+    Offene Fragen       &   
+                        \\ \hline
  \end{tabular} 
  
  \subsubsection{/F0312/ - Sende Daten PONG}
  \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
-   Funktion-ID & /F0312/  \\ \hline
-   Name & Sende Daten PONBG\\ \hline
-   Akteuere & Greemon, Greemon-Server\\ \hline
-   Ziel & Antwort zu einem Ping Packet senden \\ \hline
-    Einordnung & SendDataToServer \\ \hline
-    Vorbedingungen &  \\ \hline
-    Standardablauf & \\ \hline
-    Nachbedingungen &  \\ \hline
-    Fehler & Keine \\ \hline
-    Verzweigungen &  \\ \hline
-    Anmerkungen &  \\ \hline
-    Offene Fragen & \\ \hline
+   Funktion-ID          & /F0312/  
+                        \\ \hline
+   Name                 & Sende Daten PONG
+                        \\ \hline
+   Akteuere             & Greemon, Greemon-Server
+                        \\ \hline
+   Ziel                 & Antwort zu einem Ping Packet senden 
+                        \\ \hline
+    Einordnung          &  Server-Verbindung 
+                        \\ \hline
+    Vorbedingungen      & 
+                        \\ \hline
+    Standardablauf      & 
+                        \\ \hline
+    Nachbedingungen     &  
+                        \\ \hline
+    Fehler              & Keine 
+                        \\ \hline
+    Verzweigungen       & 
+                        \\ \hline
+    Anmerkungen         &  
+                        \\ \hline
+    Offene Fragen       & 
+                        \\ \hline
  \end{tabular} 
 
  \subsubsection{/F0313/ - Sende Daten Sensoren}
  \begin{tabular}{|p{\BreiteErsterTab}|p{\BreiteZweiterTab}|}\hline
-   Funktion-ID & /F0313/  \\ \hline
-   Name & Sende Daten PONBG\\ \hline
-   Akteuere & Greemon, Greemon-Server\\ \hline
-   Ziel & Sende gesammelte Daten an den Server \\ \hline
-    Einordnung & SendDataToServer \\ \hline
-    Vorbedingungen &  \\ \hline
-    Standardablauf & \\ \hline
-    Nachbedingungen &  \\ \hline
-    Fehler & Keine \\ \hline
-    Verzweigungen &  \\ \hline
-    Anmerkungen &  \\ \hline
-    Offene Fragen & \\ \hline
+   Funktion-ID          & /F0313/  
+                        \\ \hline
+   Name                 & Sende Sensordaten
+                        \\ \hline
+   Akteuere             & Greemon, Greemon-Server
+                        \\ \hline
+   Ziel                 & Starte die Ausleseprozesse. 
+                            Speichere Daten. 
+                            Sende gesammelte Daten an den Server. 
+                            Lösche gesendete Daten. 
+                        \\ \hline
+    Einordnung          &  Server-Verbindung 
+                        \\ \hline
+    Vorbedingungen      &  
+                        \\ \hline
+    Standardablauf      & 
+                        \\ \hline
+    Nachbedingungen     &  
+                        \\ \hline
+    Fehler              & Keine 
+                        \\ \hline
+    Verzweigungen       &  
+                        \\ \hline
+    Anmerkungen         &  
+                        \\ \hline
+    Offene Fragen       & 
+                        \\ \hline
  \end{tabular} 
 
 
@@ -1011,7 +1079,7 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
                         \\ \hline
     Akteuere &          Greemon
                         \\ \hline
-    Ziel &              
+    Ziel &              Gibt eine Struktur mit den gelesenen Sensorwerten zurück.
                         \\ \hline
     Einordnung &        
                         \\ \hline
@@ -1230,14 +1298,159 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
 
 
 \section{Nichtfunktionale Anforderungen}
+%
+% TODO
+%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%
+% Pflichtenheft - Server
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage
+\part{Pflichtenheft - Greemon Server}
+\newpage
+
+\section{Zielbestimmung}
+\subsection{Musskriterien}
+%
+% TODO
+%
+\subsection{Wunschkriterien}
+%
+% TODO
+%
+\subsection{Abgrenzungskriterien}
+%
+% TODO
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Produkteinsatz
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Produkteinsatz}
+\subsection{Anwendungsbereiche}
+%
+% TODO
+%
+\subsection{Zielgruppen}
+    Hobby-Gärtner, Benutzer ohne Programmiererfahrung. 
+    %
+    % TODO: Professor (Bewertet die Arbeit), Otto-Normalverbraucher
+    %
+\subsection{Bedingungen}
+%
+% TODO
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Produktumgebung
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Produktumgebung}
+\subsection{Software}
+ Das Produkt Greemon-Server läuft auf einem Linux-basiertem System mit installiertem Node Package Manager und Node.js und verfügt über eine Internet-Verbindung.
+
+\subsection{Hardware}
+%
+% TODO
+%
 
 
 
 
-\chapter{Benutzerdokumentation}
+
+
+\newpage
+\part{Benutzerdokumentation - Greemon Client}
+\section{Schnelleinstieg}
+    \subsection{Inbetriebnahme}
+    \subsection{Konfiguration}
+    \textbf{TODO!}
+    Anschließen an USB, Treiber installieren, Starten von Putty, Eintragen der Baudrate und COM Port. geführte Konfiguration.
 %%
 % \\TODO:
 %%
+
+\section{Produktumgebung}
+\subsection{Software}
+%
+% TODO
+%
+\subsection{Hardware}
+%
+% TODO
+%
+
+
+
+
+
+
+\newpage
+\part{Dokumentation - Greemon Client}
+\section{Installing MEAN Stack}
+    1. Install NPM and NODE
+    npm install express-generator -g
+    express --ejs <dirname>
+
+\begin{lstlisting}
+
+
+root@s18076716:/home/greemon# npm install express-generator -g
+/usr/local/bin/express -> /usr/local/lib/node_modules/express-generator/bin/express
+express-generator@4.12.4 /usr/local/lib/node_modules/express-generator
+├── sorted-object@1.0.0
+├── commander@2.6.0
+└── mkdirp@0.5.0 (minimist@0.0.8)
+root@s18076716:/home/greemon# ls -al 
+total 16
+drwxr-xr-x  4 root    root 4096 Jun  9 11:44 .
+drwxr-xr-x 11 root    root 4096 Jun  9 11:28 ..
+drwxr-xr-x  4 greemon root 4096 Jun  9 11:44 node_modules
+drwxr-xr-x  4 root    root 4096 Jun  9 11:42 public
+root@s18076716:/home/greemon# express --ejs .
+destination is not empty, continue? [y/N] y
+
+   create : .
+   create : ./package.json
+   create : ./app.js
+   create : ./public/javascripts
+   create : ./public/images
+   create : ./public/stylesheets
+   create : ./public/stylesheets/style.css
+   create : ./routes
+   create : ./routes/index.js
+   create : ./routes/users.js
+   create : ./views
+   create : ./views/index.ejs
+   create : ./views/error.ejs
+   create : ./bin
+   create : ./bin/www
+
+   install dependencies:
+     $ cd . && npm install
+
+   run the app:
+     $ DEBUG=greemon:* npm start
+
+   create : ./public
+root@s18076716:/home/greemon# 
+
+
+---- Installing dependencies:   $ cd . && npm install
+
+
+
+\end{lstlisting}
+
+
+
+
 
 \bibliographystyle{plain}
 \end{document}
