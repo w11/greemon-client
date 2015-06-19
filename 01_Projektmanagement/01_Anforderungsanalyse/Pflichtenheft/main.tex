@@ -200,13 +200,27 @@ Sonstiges: Wie in Abbildung \ref{fig:greemon-web-mockup} bei „Übersicht-Mobil
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Use-Case Diagramme}
 \subsection{Allgemeines Use-Case Diagramm}
+
 \begin{figure}[htbp] 
   \centering
      \includegraphics[width=1\textwidth]{images/usecase_client_allgemein.jpg}
-  \caption{Greemon Client - Use-Case Allgemein}
-  \label{fig:usecase_client_general}
+  \caption{Greemon Client - Use-Case Initalisierung}
+  \label{fig:usecase_client_init}
 \end{figure}
 
+\begin{figure}[htbp] 
+  \centering
+     \includegraphics[width=1\textwidth]{images/usecase_client_allgemein.jpg}
+  \caption{Greemon Client - Use-Case Konfiguration}
+  \label{fig:usecase_client_config}
+\end{figure}
+
+\begin{figure}[htbp] 
+  \centering
+     \includegraphics[width=1\textwidth]{images/usecase_client_allgemein.jpg}
+  \caption{Greemon Client - Use-Case Sensor}
+  \label{fig:usecase_client_sensor}
+\end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PRODUKTFUNKTIONEN
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1326,10 +1340,15 @@ Zum Lieferumfang des Produktes gehören:
 
 \section{Zielbestimmung}
 \subsection{Musskriterien}
+Anzeige aller registrierten Geräte.
+Anzeige aller abiotischen Sensorwerte, die duch Greemon-Clienten übertragen wurden.
+
+
 %
 % TODO
 %
 \subsection{Wunschkriterien}
+Multi-User: Zuweisung eines Greemon Clienten an einen Benutzer. Pro Greemon Server können mehrere Benutzer erstellt werden.
 %
 % TODO
 %
