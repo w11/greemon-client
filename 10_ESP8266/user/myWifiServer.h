@@ -527,12 +527,12 @@ uint8_t webserver_init(uint32_t port) {
 		system_print_meminfo();	
 		DBG_OUT("Free Heap: %u",system_get_free_heap_size());
 
-		DBG_OUT("INIT: Listening at Port %u", port);
+		DBG_OUT("INIT: Webserver listening at Port %u", port);
 		return error_code;
 	} else {
 		// SOME ERROR OCCURED TODO
 		// ESPCONN_OK         0    No error, everything OK.
-		// ESPCONN_MEM  	- 1    Out of memory error.    
+		// ESPCONN_MEM  		- 1    Out of memory error.    
 		// ESPCONN_ARG      -12    Illegal argument.       
 		// ESPCONN_ISCONN   -15    Already connected.      
 		return error_code;
