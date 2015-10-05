@@ -405,6 +405,59 @@ void enable_reset_interrupt(){
 }
 
 /******************************************************************************
+ * FunctionName : test_config
+ * Description  : Test routine for configuration file
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+void test_config(void) {
+	config_t test_cfg;	
+	config_t loaded_cfg;
+
+	uint8_t ssid[32] = "Hello WLAN\n";
+	uint8_t pass[32] = "thisisdog\n";
+
+	test_cfg.magic = CONFIG_MAGIC;	
+	test_cfg.version = CONFIG_VERSION;
+	test_cfg.random = 12345;
+
+	os_memcpy(test_cfg.ssid,"MY_OLD_SSID\0",sizeof(test_cfg.ssid));
+	os_memcpy(test_cfg.pass,"MY_OLD_PASS\0",sizeof(test_cfg.pass));
+
+	test_cfg.remote_srv_addr[0] = 192;
+	test_cfg.remote_srv_addr[1] = 168;
+	test_cfg.remote_srv_addr[2] = 1;
+	test_cfg.remote_srv_addr[3] = 10;
+	test_cfg.remote_srv_port 	= 8080;
+
+	DBG_OUT("CFG:ERASE");
+	config_erase();
+	DBG_OUT("CFG:WRITE");
+	config_write(&test_cfg);
+	DBG_OUT("CFG:READ");
+	config_read(&loaded_cfg);
+	DBG_OUT("CFG:PRINT");
+	config_print(&loaded_cfg);	
+
+	test_cfg.magic = CONFIG_MAGIC_RESET;	
+	test_cfg.version = CONFIG_VERSION+1;
+	test_cfg.random = 11223;
+	
+	os_memcpy(test_cfg.ssid,"MYSSID\0",sizeof(test_cfg.ssid));
+	os_memcpy(test_cfg.pass,"MYPASS\0",sizeof(test_cfg.pass));
+
+	DBG_OUT("CFG:ERASE");
+	config_erase();
+	DBG_OUT("CFG:WRITE");
+	config_write(&test_cfg);
+	DBG_OUT("CFG:READ");
+	config_read(&loaded_cfg);	
+	DBG_OUT("CFG:PRINT");
+	config_print(&loaded_cfg);	
+
+}
+
+/******************************************************************************
  * FunctionName : user_init
  * Description  : Entry point for the esp program. Provides initialization.
  * Parameters   : none
@@ -416,6 +469,8 @@ void user_init(void) {
 	wifi_set_event_handler_cb(wifi_handle_event_cb);
 	user_set_softap_config();
 	wifi_station_set_auto_connect(false);
+	
+	os_delay_us(1000);
 
 	INFO("=== GREEMON INITIALIZATION START ===");
 	system_get_flash_size_map();
@@ -428,15 +483,16 @@ void user_init(void) {
 	
 
   //Set softAP + station mode
-	DBG_OUT("INIT: Set WiFi Operation Mode: STATION+AP");
-  wifi_set_opmode(STATIONAP_MODE);
+	//DBG_OUT("INIT: Set WiFi Operation Mode: STATION+AP");
+  //wifi_set_opmode(STATIONAP_MODE);
 	//wifi_station_ap_number_set(50); //200 aps scan max
 	
-	DBG_OUT("INIT: Webserver initialization");
-	webserver_init(HTTP_PORT);
+	//DBG_OUT("INIT: Webserver initialization");
+	//webserver_init(HTTP_PORT);
 
-	//DBG_OUT("=== CONFIG MANAGER TEST ===");	
-	config_init();
+	DBG_OUT("=== CONFIG MANAGER TEST ===");	
+	test_config();
+
 	
 /*
 	DBG_OUT("=== MEMORY INFO ===");
