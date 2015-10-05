@@ -1,0 +1,483 @@
+/*
+	GREEMON
+
+	 GREEN UP YOUR LIFE
+	 DAVID HUBER
+	 HOCHSCHULE PFORZHEIM
+
+	INITIAL DOCUMENT: 2015-08-19 19:18
+*/
+#include "myDHT22.h"
+#include "myBH1750.h"
+
+#include "user_config.h"
+//#include "espmissingincludes.h"
+
+#include "user_interface.h"
+#include "/opt/esp-open-sdk/sdk/include/ets_sys.h"
+#include "/opt/esp-open-sdk/sdk/include/osapi.h"
+#include "/opt/esp-open-sdk/sdk/include/gpio.h"
+#include "c_types.h"
+
+#include "user_interface.h"
+
+#include "driver/uart.h"
+#include "driver/uart_register.h"
+#include "myConsole.h"
+#include "spi_flash.h"
+#include "myWifiServer.h"
+#include "myConfig.h"
+#include "gpio.h"
+
+
+
+#define BH1750_PIN_SDA 2
+#define BH1750_PIN_SCL 14
+
+LOCAL bool WifiScanComplete = false;
+LOCAL bool init_done = false;
+
+LOCAL uint32_t COUNTER = 0;
+os_timer_t timerDHT;
+os_timer_t gpiotest_timer;
+os_timer_t i2ctest_timer;
+os_timer_t deepsleep_timer;
+os_timer_t earthprobe_timer;
+
+
+void i2ctest(){
+	DBG_OUT("=== READ BH1750 ===");
+	myBH1750_Init(BH1750_PIN_SDA,BH1750_PIN_SCL);
+	myBH1750_SendRequest(BH1750_ONE_TIME_HIGH_RES_MODE);
+	os_printf("wait..\r\n");	
+	os_delay_us(BH1750_CONVERSION_TIME*1000);
+	myBH1750_ReadValue();
+	DBG_OUT("===================");
+}
+
+
+void DHT_timerCallback(void *pArg) {
+	error_t e;
+	DBG_OUT("=== READ DHT22 ===");	
+	e = DHT22_recieveData();
+	if ( e != E_SUCCESS ) {
+		ERR_OUT("ERROR CODE: %d\r\n",e); 
+	} else {
+		DBG_OUT("SUCCESS")	
+	}
+	GPIO_OUTPUT_SET(DHT_PIN, 1);
+	DBG_OUT("==================");	
+} // End of timerCallback
+
+
+
+/*
+* TESTING DEEP SLEEP MODE
+* CONNECT RST -> GPIO16, needed for Wakeup Event
+* Light-Sleep: 0.9 mA
+* Deep-Sleep:   10 uA
+*/
+void deep_sleep_test_cb(void *pArg) {
+
+	os_printf("Start\n");
+	int res, i;
+	for (i = 0; i < 2; i++) {
+	  if (spi_flash_erase_sector(0x20+i) != 0) {
+		  os_printf("Erase error");
+	   }
+	}
+	static char text_to_write[] = "1234567812345678123456781234567812345678";
+	static char buf[sizeof(text_to_write)];
+	uint32_t addr = 0x3C000;
+	for (i = 0; i < 100; i++) {
+	  addr += sizeof(text_to_write) + 42;
+	  if (spi_flash_write(addr, (uint32_t*)text_to_write, sizeof(text_to_write)-1) != 0) {    
+		      os_printf("%d: Write error: addr: %p\n", i, addr);
+		       continue;
+	  }
+	  memset(buf, 0, sizeof(buf));
+	  if (spi_flash_read(addr, (uint32_t*)buf,  sizeof(text_to_write)-1) != 0) {
+		  os_printf("%d: Read error: addr: %d\n", i, addr);
+		  continue;
+	  }
+	  if (memcmp(text_to_write, buf, sizeof(buf)) != 0) {
+		  os_printf("%d: addr: %p, In != Out\n", i, addr);
+		  continue;
+	  }
+	  if (memcmp(text_to_write, buf, sizeof(buf)) == 0) {
+		  os_printf("%d: addr: %p, In == Out\n", i, addr);
+		  continue;
+	  }
+	}
+	os_printf("Finish\n");
+
+	os_printf("\r\n---DEEP SLEEP TEST---\r\n");	
+	system_deep_sleep(10000000); // uint32_t time in us 
+}
+
+/******************************************************************************
+ * FunctionName : do_nothing
+ * Description  : does nothing
+ * Parameters   : nothing
+ * Returns      : NOTHING I SAID!
+*******************************************************************************/
+void do_nothing(void){
+	//system_deep_sleep(10000000); // uint32_t time in us 
+}
+
+/******************************************************************************
+ * FunctionName : wifi_scan_done
+ * Description  : scan done callback
+ * Parameters   :  arg: contain the aps information;
+                          status: scan over status
+ * Returns      : none
+*******************************************************************************/
+void ICACHE_FLASH_ATTR
+wifi_scan_done(void *arg, STATUS status)
+{
+  uint8 ssid[33];
+  char temp[128];
+
+  if (status == OK)
+  {
+    struct bss_info *bss_link = (struct bss_info *)arg;
+    bss_link = bss_link->next.stqe_next; //ignore the first one , it's invalid.
+
+    while (bss_link != NULL)
+    {
+      os_memset(ssid, 0, 33);
+      if (os_strlen(bss_link->ssid) <= 32)
+      {
+        os_memcpy(ssid, bss_link->ssid, os_strlen(bss_link->ssid));
+      }
+      else
+      {
+        os_memcpy(ssid, bss_link->ssid, 32);
+      }
+      os_printf("(%d,\"%s\",%d,\""MACSTR"\",%d)\r\n",bss_link->authmode, ssid,bss_link->rssi,MAC2STR(bss_link->bssid),bss_link->channel);
+      bss_link = bss_link->next.stqe_next;
+    }
+  }
+  else
+  {
+     os_printf("scan fail !!!\r\n");
+  }
+
+}
+
+/******************************************************************************
+ * FunctionName : wifi_scan
+ * Description  : wifi scan, only can be called after system init done.
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+void ICACHE_FLASH_ATTR
+wifi_scan(void)
+{
+   if(wifi_get_opmode() == SOFTAP_MODE)
+   {
+     os_printf("ap mode can't scan !!!\r\n");
+     return;
+   }
+   wifi_station_scan(NULL,wifi_scan_done);
+
+}
+
+
+/******************************************************************************
+ * FunctionName : user_init
+ * Description  : Entry point for the esp program. Provides initialization.
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+uint16_t earthprobe_adc_read(void) {
+	uint16_t adcValue = system_adc_read();
+	os_printf("adc = %d\n", adcValue);
+	return adcValue;
+} // End of user_init
+
+/******************************************************************************
+ * FunctionName : 
+ * Description  : 
+ * Parameters   : 
+ * Returns      : 
+*******************************************************************************/
+//void user_rf_pre_init(void) { }
+
+/******************************************************************************
+ * FunctionName : 
+ * Description  : 
+ * Parameters   : 
+ * Returns      : 
+*******************************************************************************/
+void system_init_done(void){
+	INFO("=== GREEMON INITIALIZATION END ===");
+	init_done = true;
+
+
+
+	//os_timer_setfn(&earthprobe_timer, earthprobe_adc_read, NULL);
+	//os_timer_arm(&earthprobe_timer, 2000, 1);
+
+	DBG_OUT("INIT: DHT22 initialization");
+	DHT22_init();
+	os_timer_setfn(&timerDHT, DHT_timerCallback, NULL);
+	os_timer_arm(&timerDHT, 5000, 1);
+
+	//DBG_OUT("INIT: BH1750 initialization");
+	//os_timer_setfn(&i2ctest_timer, i2ctest, NULL);
+	//os_timer_arm(&i2ctest_timer, 20000, 1);
+
+
+  //DBG_OUT("INIT: Scan available access points ===");
+  //wifi_station_ap_number_set(20);
+  // wifi scan has to after system init done.
+  //system_init_done_cb(wifi_scan);
+}
+
+/******************************************************************************
+ * FunctionName : wifi_ipv4_setDefault
+ * Description  : Sets the default values for the DHCP Server
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+void wifi_ipv4_setDefault(void){
+	struct ip_info info;
+
+	wifi_softap_dhcps_stop();
+
+	IP4_ADDR(&info.ip, 192, 168, 5, 1);
+	IP4_ADDR(&info.gw, 192, 168, 5, 1);
+	IP4_ADDR(&info.netmask, 255, 255, 255, 0);
+
+	wifi_set_ip_info(SOFTAP_IF, &info);
+	wifi_softap_dhcps_start();
+}
+
+
+/******************************************************************************
+ * FunctionName : 
+ * Description  : 
+ * Parameters   : 
+ * Returns      : 
+*******************************************************************************/
+void wifi_handle_event_cb(System_Event_t *evt)
+{
+	DBG_OUT(">>WiFi Event: %x", evt->event);
+	switch (evt->event) {
+		case EVENT_STAMODE_CONNECTED:
+			DBG_OUT("Greemon: Connect to SSID %s. Channel: %d",
+				evt->event_info.connected.ssid,
+				evt->event_info.connected.channel);
+		break;
+		case EVENT_STAMODE_DISCONNECTED:
+			DBG_OUT("Greemon: Disconnected from SSID %s. Reason: %d",
+				evt->event_info.disconnected.ssid,
+				evt->event_info.disconnected.reason);
+		break;
+		case EVENT_STAMODE_AUTHMODE_CHANGE:
+			DBG_OUT("Greemon: Changed Authmode %d -> %d",
+				evt->event_info.auth_change.old_mode,
+				evt->event_info.auth_change.new_mode);
+		break;
+		case EVENT_STAMODE_GOT_IP:
+			DBG_OUT("Greemon: Optained Address from DHCP Server."); 
+			DBG_OUT(">> IP:" IPSTR "\tMask:" IPSTR "\tGW:" IPSTR,
+				IP2STR(&evt->event_info.got_ip.ip),
+				IP2STR(&evt->event_info.got_ip.mask),
+				IP2STR(&evt->event_info.got_ip.gw));
+		break;
+		case EVENT_SOFTAPMODE_STACONNECTED:
+			DBG_OUT("New Client: " MACSTR "joined, AID = %d",
+				MAC2STR(evt->event_info.sta_connected.mac),
+				evt->event_info.sta_connected.aid);
+		break;
+		case EVENT_SOFTAPMODE_STADISCONNECTED:
+			DBG_OUT("Old Client: " MACSTR "leaved, AID = %d",
+				MAC2STR(evt->event_info.sta_disconnected.mac),
+				evt->event_info.sta_disconnected.aid);
+		break;
+		case EVENT_MAX:
+			ERR_OUT("MAX CONNECTIONS LIMIT REACHED");
+		break;
+		default:
+		break;
+	}
+}
+
+/******************************************************************************
+ * FunctionName : user_set_softap_config
+ * Description  : set SSID and password of ESP8266 softAP
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+void ICACHE_FLASH_ATTR
+user_set_softap_config(void)
+{
+   struct softap_config config;
+
+   wifi_softap_get_config(&config); // Get config first.
+  
+   //TODO: LOAD Config from Flash Memory. 
+   os_memset(config.ssid, 0, 32);
+   os_memset(config.password, 0, 64);
+   os_memcpy(config.ssid, "Greemon", 7);
+   os_memcpy(config.password, "", 0);
+   config.authmode = AUTH_OPEN;
+   config.ssid_len = 0;		// or its actual length
+   config.max_connection = HTTP_CONNECTION_MAX; // how many stations can connect to ESP8266 softAP at most.
+
+   wifi_softap_set_config(&config);// Set ESP8266 softap config .
+   
+	wifi_ipv4_setDefault();
+}
+
+/*****************************************************************************
+ * FunctionName	: reset_interrupt_cb
+ * Description	: This is the interrupt handler, whenever the reset button is
+ *		  Pressed. Checks if the button was pressed more than 
+		  x seconds and sets the config to default values.
+ * Parameters	: none
+ * Returns	: none
+ *****************************************************************************/
+void intr_handle_cb(void){
+	uint8_t i = 0;
+
+	// Save current value for status register
+	uint32_t gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);	
+
+	//Disable Interrupt
+	gpio_pin_intr_state_set( GPIO_ID_PIN(0),   GPIO_PIN_INTR_DISABLE );
+	
+	os_delay_us(1000); // anti-prell
+
+	DBG_OUT("Interrupt detected.");
+	
+	// Count how long the button is pressed
+	while ( true == GPIO_INPUT_GET( GPIO_ID_PIN(0) ) ) 
+	{
+		DBG_OUT("%u Seconds",i++);
+		os_delay_us(1000000); // ~1sec
+	}
+
+	// Check if button was pressed more than ~5 seconds
+	if ( true == (5 <= i) ) { 
+		DBG_OUT("RESET - Detected reset");
+		// config_reset();
+		// TODO: Reset config and restart controller
+
+	} else {
+		DBG_OUT("RESET - False positive");
+		// Do nothing...
+	}
+
+	DBG_OUT("Reset Interrupt State");
+	
+	// Clear status in interrupt register
+	GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status & BIT(0));	
+	
+	// Reenable interrupt
+	gpio_pin_intr_state_set(GPIO_ID_PIN(0), GPIO_PIN_INTR_POSEDGE);
+}
+
+/******************************************************************************
+ * FunctionName : enable_reset_interrupt
+ * Description  : 
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+void enable_reset_interrupt(){
+	
+	ETS_GPIO_INTR_DISABLE();
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);
+    	gpio_output_set(0, 0, 0, GPIO_ID_PIN(0));
+    	gpio_register_set(GPIO_PIN_ADDR(0), GPIO_PIN_INT_TYPE_SET(GPIO_PIN_INTR_DISABLE)
+          | GPIO_PIN_PAD_DRIVER_SET(GPIO_PAD_DRIVER_DISABLE)
+          | GPIO_PIN_SOURCE_SET(GPIO_AS_PIN_SOURCE));
+
+    	//clear gpio status
+    	GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(0));
+
+    	//enable interrupt
+    	gpio_pin_intr_state_set(GPIO_ID_PIN(0), GPIO_PIN_INTR_NEGEDGE);
+    	ETS_GPIO_INTR_ENABLE();
+
+}
+
+/******************************************************************************
+ * FunctionName : user_init
+ * Description  : Entry point for the esp program. Provides initialization.
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+void user_init(void) {
+	system_init_done_cb(system_init_done);
+	uart_init(BIT_RATE_115200, BIT_RATE_115200);
+	wifi_set_event_handler_cb(wifi_handle_event_cb);
+	user_set_softap_config();
+	wifi_station_set_auto_connect(false);
+
+	INFO("=== GREEMON INITIALIZATION START ===");
+	system_get_flash_size_map();
+
+	DBG_OUT("INIT: Register interrupt handler");
+
+	// Register interrupt handler
+	ETS_GPIO_INTR_ATTACH(intr_handle_cb, NULL);
+	enable_reset_interrupt();
+	
+
+  //Set softAP + station mode
+	DBG_OUT("INIT: Set WiFi Operation Mode: STATION+AP");
+  wifi_set_opmode(STATIONAP_MODE);
+	//wifi_station_ap_number_set(50); //200 aps scan max
+	
+	DBG_OUT("INIT: Webserver initialization");
+	webserver_init(HTTP_PORT);
+
+	//DBG_OUT("=== CONFIG MANAGER TEST ===");	
+	config_init();
+	
+/*
+	DBG_OUT("=== MEMORY INFO ===");
+	system_print_meminfo();	
+	DBG_OUT("Free Heap: %u",system_get_free_heap_size());
+*/
+
+} // End of user_init
+
+
+/*
+* OLD IMPLEMENTATIONS
+*
+
+void user_init(void) {
+	uart_init(BIT_RATE_115200, BIT_RATE_115200);
+	wifi_station_set_auto_connect(false);
+
+    //Set softAP + station mode
+    wifi_set_opmode(STATIONAP_MODE);
+	wifi_station_ap_number_set(200);
+    // wifi scan has to after system init done.
+    system_init_done_cb(wifi_scan);
+
+	os_printf("\r\n---HELLO---\r\n");	
+	system_print_meminfo();	
+	system_get_flash_size_map();
+	COUNTER++;
+	os_printf("\r\nCOUNTER: %d\r\n", COUNTER);
+	//DHT22_init();
+
+	//os_timer_setfn(&myTimer, DHT_timerCallback, NULL);
+	//os_timer_arm(&myTimer, 2000, 1);
+
+	//os_timer_setfn(&i2ctest_timer, i2ctest, NULL);
+	//os_timer_arm(&i2ctest_timer, 2000, 1);
+    
+	//os_timer_setfn(&deepsleep_timer, deep_sleep_test_cb, NULL);
+	//os_timer_arm(&deepsleep_timer, 2000, 1);
+
+	do_nothing();
+	
+} 
+*/
