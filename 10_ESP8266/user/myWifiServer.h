@@ -152,7 +152,6 @@ user_esp_platform_check_ip(void)
 
    //get ip info of ESP8266 station
     wifi_get_ip_info(STATION_IF, &ipconfig);
-
     if (wifi_station_get_connect_status() == STATION_GOT_IP && ipconfig.ip.addr != 0) {
       DBG_OUT("DHCP-Client got IP-Address");
     } else {
@@ -167,6 +166,19 @@ user_esp_platform_check_ip(void)
         }
     }
 }
+
+/******************************************************************************
+ * FunctionName : user_set_station_config
+ * Description  : set the router info which ESP8266 station will connect to
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+void ICACHE_FLASH_ATTR
+user_wifi_parse_post_config(char * pusrdata){
+  
+
+}
+
 
 /******************************************************************************
  * FunctionName : user_set_station_config
@@ -232,7 +244,7 @@ webserver_recv(void *arg, char *pusrdata, unsigned short length)
 // PARSE GET  COMMAND
 	switch (pusrdata[0]) {
 		case 'G': 
-			DBG_OUT(">>Parsing - Found GET");
+			DBG_OUT("Parsing - Found GET");
 			// Find end of get request               vvvv
 			// GET /index.html?this=0&that=1 HTTP/1.1\r\n
 			// After that we dont need additional 13 Characters:
@@ -249,7 +261,7 @@ webserver_recv(void *arg, char *pusrdata, unsigned short length)
 						DBG_OUT("Malloc failed");
 						validRequest = true;
 					} else {
-						DBG_OUT("Clients requested: '%s'", parsedRequest);		
+						DBG_OUT("Client requested: '%s'", parsedRequest);		
 						validRequest = false;		
 					}								
  					os_free(parsedRequest);
@@ -264,6 +276,7 @@ webserver_recv(void *arg, char *pusrdata, unsigned short length)
 		case 'P': 
 			DBG_OUT("Parsing - Found POST");
 			DBG_OUT(pusrdata);
+      user_wifi_parse_post_config(pusrdata);
 			user_set_station_config();
 		break;			
 		default: 

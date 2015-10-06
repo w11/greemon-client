@@ -14,7 +14,7 @@
 #define CONFIG_MAGIC 0xCAFEC0DE
 #define CONFIG_MAGIC_RESET 0xDEADBEEF
 #define CONFIG_VERSION 1
-
+#define CONFIG_MAX_DATASETS 30
 
 typedef enum config_error_t {
 	CONFIG_ALLOCATION_FAILED,
@@ -24,25 +24,30 @@ typedef enum config_error_t {
 } config_error_t;
 
 typedef struct {
-	// TODO:
-	// DHT22
-	// BH1750
-	// ADC
-	// Time
+  uint32_t  timestamp;          // timestamp
+	int16_t   dht22_moisture;     // DHT22
+	uint16_t  dht22_temperature;  // DHT22
+	uint16_t  bh1750_light;       // BH1750
+  uint16_t  adc_moisture;       // ADC
 } gmDataset_t;
+// 96 Bytes
 
 typedef struct {
-	uint32_t 		magic;  							// INITIAL: CONFIG_MAGIC_RESET
-	uint16_t		version;
-	uint16_t  	random;
-  //uint16_t	config_padding;
-	//uint32_t 	config_deep_sleep_time; // !0 = ENABLE DEEPSLEEP MODUS 
-	uint8_t 		remote_srv_addr[3]; 	// IPADDR OF THE SERVER
-	uint16_t  	remote_srv_port;	// PORT OF THE SERVER
-	uint8_t 		ssid[32]; 		// SSID of the network
-	uint8_t 		pass[32]; 		// passwort for the network
-	//TODO: Add strcture to save at least one old dataset of values
+	uint32_t 		magic;  		            // INITIAL: CONFIG_MAGIC_RESET
+	uint16_t		version;                // version of the configuration file
+	uint16_t  	random;                 // Random number, used for validation
+  uint32_t	  config_padding1;        // Padding area for newer versions
+	uint32_t 	  config_deep_sleep_time; // !0 = ENABLE DEEPSLEEP MODUS 
+	uint8_t 		remote_srv_addr[3]; 	  // IPADDR OF THE SERVER
+	uint16_t  	remote_srv_port;	      // PORT OF THE SERVER
+	uint8_t 		ssid[32]; 		          // SSID of the network
+	uint8_t 		pass[32]; 		          // passwort for the network
+  uint32_t    config_padding2;        // Padding are for newer versions
+  uint8_t     storedData;             // number of stored values
+  gmDataset_t gm_data[CONFIG_MAX_DATASETS];             // Save last 3 Datasets
 } config_t;
+// 208 bytes + 96*CONFIG_MAX_DATASETS
+
 
 config_t user_global_cfg;
 
@@ -111,33 +116,46 @@ config_read(config_t* config)
 SpiFlashOpResult ICACHE_FLASH_ATTR
 config_erase(void)
 {
+  //uint8_t num_sec_del;  // number of sectors to delete
+  uint8_t isec;    // sector to delte in for..
+  uint8_t num_errors_occured = 0;
+
+  uint16_t config_size = sizeof(config_t);
+  uint16_t num_sectors = 1;
+  uint32_t end_sector = CONFIG_SECTOR_START;
+  uint32_t psector = CONFIG_SECTOR_START;
+
+  if (config_size < SPI_FLASH_SEC_SIZE) num_sectors = ( config_size / SPI_FLASH_SEC_SIZE ) +1;
+  end_sector += num_sectors;
+
+
+  DBG_OUT("cfg-size: %d bytes, sector-size: %d bytes, sector-start: 0x%x, sector-end: 0x%x", config_size, SPI_FLASH_SEC_SIZE, CONFIG_SECTOR_START, end_sector-1);
+  DBG_OUT("erasing %d bytes ( %d sectors ) in flash for the configuration data", num_sectors*SPI_FLASH_SEC_SIZE, num_sectors);
+
   ETS_GPIO_INTR_DISABLE();
-
   SpiFlashOpResult r = SPI_FLASH_RESULT_ERR;
-  DBG_OUT("erasing config flash sector..");
-
-  r = spi_flash_erase_sector( CONFIG_SECTOR_START );
-
-  switch (r)
-  {
-    case
-      SPI_FLASH_RESULT_ERR: 
-        ERR_OUT("error erasing config sector");
-        return r;
-      break;
-    case
-      SPI_FLASH_RESULT_TIMEOUT:
-        ERR_OUT("timeout erasing config sector");
-        return r;
-      break;
-    case
-      SPI_FLASH_RESULT_OK: 
-        DBG_OUT("successfully erased config sector");
-        return r;
-      break;
+  for (isec = 0; isec < num_sectors; isec++)
+  { 
+    psector = CONFIG_SECTOR_START + isec;
+    DBG_OUT("del: sector 0x%x", psector);
+    // Delete sector
+    r = spi_flash_erase_sector( psector );
+    // get result
+    if ( SPI_FLASH_RESULT_OK != r ) {
+      num_errors_occured++;
+      ERR_OUT("sector %x could not be deleted!", psector);
+    } else {
+      DBG_OUT("sector %x deleted", psector);
+    }
   }
-
   ETS_GPIO_INTR_ENABLE();
+  if (num_errors_occured > 0) {
+     ERR_OUT("ERRORS OCCURED: %d", num_errors_occured);
+     return SPI_FLASH_RESULT_ERR;
+  } else {
+     DBG_OUT("flash erase success");
+    return SPI_FLASH_RESULT_OK;
+  }
 }
 
 
