@@ -17,25 +17,32 @@
 
 
 typedef enum config_error_t {
-  CONFIG_ALLOCATION_FAILED,
-  CONFIG_MAGIC_NOT_FOUND = -1,	// No Config available
-	CONFIG_INITIAL = 0,				// Initial Error value
-	CONFIG_MAGIC_FOUND = 1,			// Config found
+	CONFIG_ALLOCATION_FAILED,
+	CONFIG_MAGIC_NOT_FOUND = -1,		// No Config available
+	CONFIG_INITIAL = 0,							// Initial Error value
+	CONFIG_MAGIC_FOUND = 1,					// Config found
 } config_error_t;
 
+typedef struct gmDataset_t {
+	// TODO:
+	// DHT22
+	// BH1750
+	// ADC
+	// Time
+}
 
 typedef struct {
-	uint32_t 	magic;  // INITIAL: CONFIG_MAGIC_RESET
-	uint16_t	version;
-  uint16_t  random;
+	uint32_t 		magic;  							// INITIAL: CONFIG_MAGIC_RESET
+	uint16_t		version;
+	uint16_t  	random;
   //uint16_t	config_padding;
 	//uint32_t 	config_deep_sleep_time; // !0 = ENABLE DEEPSLEEP MODUS 
-	uint8_t 	remote_srv_addr[3]; // IPADDR OF THE SERVER
-	uint16_t  remote_srv_port;// PORT OF THE SERVER
-	uint8_t 	ssid[32]; // SSID of the network
-	uint8_t 	pass[32]; // passwort for the network
+	uint8_t 		remote_srv_addr[3]; 	// IPADDR OF THE SERVER
+	uint16_t  	remote_srv_port;	// PORT OF THE SERVER
+	uint8_t 		ssid[32]; 		// SSID of the network
+	uint8_t 		pass[32]; 		// passwort for the network
+	//TODO: Add strcture to save at least one old dataset of values
 } config_t;
-
 
 config_t user_global_cfg;
 
@@ -86,9 +93,9 @@ config_read(config_t* config)
 
   SpiFlashOpResult r = SPI_FLASH_RESULT_ERR;
 
-  r = spi_flash_read(  (uint32_t)CONFIG_ADDRESS_START,   // source 
-                          (uint32_t*)config,                // dest
-                          sizeof(config_t) );               // data length
+  r = spi_flash_read(  (uint32_t)CONFIG_ADDRESS_START,		// source 
+                          (uint32_t*)config,                	// dest
+                          sizeof(config_t) );               	// data length
 
   ETS_GPIO_INTR_ENABLE();
   return r; 
@@ -164,8 +171,8 @@ config_save(config_t* unsaved_config)
 /******************************************************************************
  * FunctionName : config_init
  * Description  : Entry point for config initialization.
- *								Searches for the magic inside the flash memory.
- *								Loads the config from the flash memory.
+ *		  Searches for the magic inside the flash memory.
+ *		  Loads the config from the flash memory.
  * Parameters   : none
  * Returns      : config_error_t
 *******************************************************************************/
@@ -198,7 +205,7 @@ config_init(void) {
   if (CONFIG_INITIAL == cfg->config_magic) {
     DBG_OUT("magic initial found");
     return CONFIG_INITIAL;
-  }
+  }
   // Read Version of the configuration file
   if (CONFIG_VERSION == cfg->config_version) {
     DBG_OUT("config file has the same version as the firmware");
