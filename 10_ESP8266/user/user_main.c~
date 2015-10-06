@@ -27,8 +27,6 @@
 #include "spi_flash.h"
 #include "myWifiServer.h"
 #include "myConfig.h"
-#include "myNTP.h"
-
 #include "gpio.h"
 
 
@@ -222,10 +220,9 @@ void system_init_done(void){
 	//os_timer_arm(&earthprobe_timer, 2000, 1);
 
 	DBG_OUT("INIT: DHT22 initialization");
-	
-  //DHT22_init();
-	//os_timer_setfn(&timerDHT, DHT_timerCallback, NULL);
-	//os_timer_arm(&timerDHT, 5000, 1);
+	DHT22_init();
+	os_timer_setfn(&timerDHT, DHT_timerCallback, NULL);
+	os_timer_arm(&timerDHT, 5000, 1);
 
 	//DBG_OUT("INIT: BH1750 initialization");
 	//os_timer_setfn(&i2ctest_timer, i2ctest, NULL);
@@ -264,8 +261,7 @@ void wifi_ipv4_setDefault(void){
  * Parameters   : 
  * Returns      : 
 *******************************************************************************/
-void ICACHE_FLASH_ATTR
-wifi_handle_event_cb(System_Event_t *evt)
+void wifi_handle_event_cb(System_Event_t *evt)
 {
 	DBG_OUT(">>WiFi Event: %x", evt->event);
 	switch (evt->event) {
@@ -290,10 +286,6 @@ wifi_handle_event_cb(System_Event_t *evt)
 				IP2STR(&evt->event_info.got_ip.ip),
 				IP2STR(&evt->event_info.got_ip.mask),
 				IP2STR(&evt->event_info.got_ip.gw));
-        
-        // We are starting the SNTP Timer, because we got an IP Address
-        DBG_OUT("starting sntp client");
-        user_sntp_start();
 		break;
 		case EVENT_SOFTAPMODE_STACONNECTED:
 			DBG_OUT("New Client: " MACSTR "joined, AID = %d",
@@ -433,9 +425,9 @@ void test_config(void) {
 	os_memcpy(test_cfg.pass,"MY_OLD_PASS\0",sizeof(test_cfg.pass));
 
 	test_cfg.remote_srv_addr[0] = 192;
-	test_cfg.remote_srv_addr[1] = 168;
-	test_cfg.remote_srv_addr[2] = 1;
-	test_cfg.remote_srv_addr[3] = 10;
+	test_cfg.remote_srv_addr[0] = 168;
+	test_cfg.remote_srv_addr[0] = 1;
+	test_cfg.remote_srv_addr[0] = 10;
 	test_cfg.remote_srv_port 	= 8080;
 
 	DBG_OUT("CFG:ERASE");
@@ -483,8 +475,9 @@ void user_init(void) {
 	INFO("=== GREEMON INITIALIZATION START ===");
 	system_get_flash_size_map();
 
-	// Register interrupt handler
 	DBG_OUT("INIT: Register interrupt handler");
+
+	// Register interrupt handler
 	ETS_GPIO_INTR_ATTACH(intr_handle_cb, NULL);
 	enable_reset_interrupt();
 	
@@ -494,13 +487,13 @@ void user_init(void) {
   //wifi_set_opmode(STATIONAP_MODE);
 	//wifi_station_ap_number_set(50); //200 aps scan max
 	
+	//DBG_OUT("INIT: Webserver initialization");
+	//webserver_init(HTTP_PORT);
 
 	DBG_OUT("=== CONFIG MANAGER TEST ===");	
 	test_config();
 
 	
-	DBG_OUT("INIT: Webserver initialization");
-	webserver_init(HTTP_PORT);
 /*
 	DBG_OUT("=== MEMORY INFO ===");
 	system_print_meminfo();	

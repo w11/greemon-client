@@ -17,88 +17,35 @@
 
 
 typedef enum config_error_t {
-	CONFIG_ALLOCATION_FAILED,
-	CONFIG_MAGIC_NOT_FOUND = -1,		// No Config available
-	CONFIG_INITIAL = 0,							// Initial Error value
-	CONFIG_MAGIC_FOUND = 1,					// Config found
+    CONFIG_ALLOCATION_FAILED,
+    CONFIG_MAGIC_NOT_FOUND = -1,	// No Config available
+	CONFIG_INITIAL = 0,				// Initial Error value
+	CONFIG_MAGIC_FOUND = 1,			// Config found
 } config_error_t;
 
-typedef struct {
-	// TODO:
-	// DHT22
-	// BH1750
-	// ADC
-	// Time
-} gmDataset_t;
 
 typedef struct {
-	uint32_t 		magic;  							// INITIAL: CONFIG_MAGIC_RESET
-	uint16_t		version;
-	uint16_t  	random;
-  //uint16_t	config_padding;
+	uint32_t 	config_magic;  // INITIAL: CONFIG_MAGIC_RESET
+	uint16_t	config_version;
+	//uint16_t	config_padding;
 	//uint32_t 	config_deep_sleep_time; // !0 = ENABLE DEEPSLEEP MODUS 
-	uint8_t 		remote_srv_addr[3]; 	// IPADDR OF THE SERVER
-	uint16_t  	remote_srv_port;	// PORT OF THE SERVER
-	uint8_t 		ssid[32]; 		// SSID of the network
-	uint8_t 		pass[32]; 		// passwort for the network
-	//TODO: Add strcture to save at least one old dataset of values
+	//uint8_t 	remote_srv_addr[3]; // IPADDR OF THE SERVER
+	//uint16_t  	remote_srv_port;// PORT OF THE SERVER
+	//uint8_t 	ssid[32]; // SSID of the network
+	//uint8_t 	pass[32]; // passwort for the network
 } config_t;
-
-config_t user_global_cfg;
-
-
-void config_print(config_t* config){
-  DBG_OUT("======= CONFIG START =======");
-  DBG_OUT("ADDR: \t%x", config);
-  DBG_OUT("MAGC: \t%x", config->magic);
-  DBG_OUT("VERS: \t%d", config->version);
-  DBG_OUT("RAND: \t%d", config->random);
-  DBG_OUT("----------------------------");
-  DBG_OUT("SSID: \t%s", config->ssid);
-  DBG_OUT("PASS: \t%s", config->pass);
-  DBG_OUT("RSRV: \t%d.%d.%d.%d:%d", 
-      config->remote_srv_addr[0], 
-      config->remote_srv_addr[1], 
-      config->remote_srv_addr[2], 
-      config->remote_srv_addr[3], 
-      config->remote_srv_port );
-  DBG_OUT("======= CONFIG END =========");
-}
 
 
 
 SpiFlashOpResult ICACHE_FLASH_ATTR
 config_write(config_t* config) {
-  DBG_OUT("writing new configuration data to flash memory");
-  
-  ETS_GPIO_INTR_DISABLE();
-
-  SpiFlashOpResult r = SPI_FLASH_RESULT_ERR;
-
-  r = spi_flash_write( CONFIG_ADDRESS_START,                // dest
-                          (uint32_t*)config,                // src
-                          sizeof(config_t) );               // length
-  if (SPI_FLASH_RESULT_OK == r) DBG_OUT("successfully wrote config into flash memory");
-  ETS_GPIO_INTR_ENABLE();
-  return r;
-
+  return spi_flash_write(CONFIG_ADDRESS_START,(uint32_t*)&config, sizeof(config_t));
 }
 
 SpiFlashOpResult ICACHE_FLASH_ATTR
 config_read(config_t* config)
-{ 
-  DBG_OUT("reading configuration file from flash memory");
-
-  ETS_GPIO_INTR_DISABLE();
-
-  SpiFlashOpResult r = SPI_FLASH_RESULT_ERR;
-
-  r = spi_flash_read(  (uint32_t)CONFIG_ADDRESS_START,		// source 
-                          (uint32_t*)config,                	// dest
-                          sizeof(config_t) );               	// data length
-
-  ETS_GPIO_INTR_ENABLE();
-  return r; 
+{
+	
 }
 
 /******************************************************************************
@@ -111,35 +58,8 @@ config_read(config_t* config)
 SpiFlashOpResult ICACHE_FLASH_ATTR
 config_erase(void)
 {
-  ETS_GPIO_INTR_DISABLE();
-
-  SpiFlashOpResult r = SPI_FLASH_RESULT_ERR;
-  DBG_OUT("erasing config flash sector..");
-
-  r = spi_flash_erase_sector( CONFIG_SECTOR_START );
-
-  switch (r)
-  {
-    case
-      SPI_FLASH_RESULT_ERR: 
-        ERR_OUT("error erasing config sector");
-        return r;
-      break;
-    case
-      SPI_FLASH_RESULT_TIMEOUT:
-        ERR_OUT("timeout erasing config sector");
-        return r;
-      break;
-    case
-      SPI_FLASH_RESULT_OK: 
-        DBG_OUT("successfully erased config sector");
-        return r;
-      break;
-  }
-
-  ETS_GPIO_INTR_ENABLE();
+  return spi_flash_erase_sector( CONFIG_SECTOR_START );
 }
-
 
 /******************************************************************************
  * FunctionName : config_save
@@ -150,8 +70,8 @@ config_erase(void)
 config_error_t ICACHE_FLASH_ATTR
 config_save(config_t* unsaved_config)
 {
-  unsaved_config->version = CONFIG_VERSION;
-  unsaved_config->magic = CONFIG_MAGIC;
+  unsaved_config->config_version = CONFIG_VERSION;
+  unsaved_config->config_magic = CONFIG_MAGIC;
   // Erase configuration sector
   if (SPI_FLASH_RESULT_OK == config_erase() ){
     // write new config in flash
@@ -171,31 +91,28 @@ config_save(config_t* unsaved_config)
 /******************************************************************************
  * FunctionName : config_init
  * Description  : Entry point for config initialization.
- *		  Searches for the magic inside the flash memory.
- *		  Loads the config from the flash memory.
+ *								Searches for the magic inside the flash memory.
+ *								Loads the config from the flash memory.
  * Parameters   : none
  * Returns      : config_error_t
 *******************************************************************************/
 config_error_t ICACHE_FLASH_ATTR 
 config_init(void) {
   // Allocate memory for the configuation file
-  
-  //global_cfg.magic = 0;
-  //global_cfg.version = 1;
-  //DBG_OUT("initializing configuration file");
+  config_t* cfg;
+
+  DBG_OUT("initializing configuration file");
+  bool load_failover = true;
 
 
-  
-  /*
   // Load flash sector into allocated memory 
   DBG_OUT("reading flash memory");
-	if (SPI_FLASH_RESULT_OK == config_read(&global_cfg)){
+	if (SPI_FLASH_RESULT_OK == config_read(cfg)){
 		DBG_OUT("..OK");
 	} else {
 		DBG_OUT("..ERROR");
 	}
-  */
- /*
+
   // Read Content. Is it a configuration file? (config-magic)
   if (CONFIG_MAGIC != cfg->config_magic) {
     ERR_OUT("config magic not found");
@@ -215,7 +132,7 @@ config_init(void) {
   } 
   // use config
 
-  */
+  
 
 
 /*

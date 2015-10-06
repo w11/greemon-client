@@ -1,10 +1,11 @@
 #ifndef __MYNTP_H__
 #define __MYNTP_H__
-/* 
- * Implementation for GREEMON Client
+
+/* Implementation for GREEMON Client
  * David Huber
  */
 
+// include for timer
 #include "c_types.h"
 #include "user_interface.h"
 #include "osapi.h"

@@ -7,14 +7,17 @@
 #define SSID_PASSWORD "scheka123"
 
 
-
-
 //#define FLASH_1M
 //#define FLASH_2M
 //#define FLASH_4M
 //#define FLASH_AUTOSIZE
-//#define DEVELOP_VERSION
-//#define FULL_VERSION_FOR_USER
+#define FULL_VERSION
+#define DEV_VERSION
+
+#ifdef DEV_VERSION
+#undef FULL_VERSION
+#endif
+
 
 //#define USE_OPTIMIZE_PRINTF
 
@@ -44,9 +47,6 @@
 
 
 //#define GPIO_INTERRUPT_ENABLE
-
-//#define BUILD_WOFS     1
-//#define BUILD_SPIFFS 1
 
 //#define PRINTF_LONG_SUPPORT
 
