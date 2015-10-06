@@ -53,6 +53,7 @@ config_t user_global_cfg;
 
 
 void config_print(config_t* config){
+  DBG_OUT("cfg-size: %d", sizeof(*config))
   DBG_OUT("======= CONFIG START =======");
   DBG_OUT("ADDR: \t%x", config);
   DBG_OUT("MAGC: \t%x", config->magic);
