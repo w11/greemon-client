@@ -22,6 +22,12 @@
 #define CONFIG_STD_APNAME "GREEMON"
 #define CONFIG_STD_PASS ""
 
+#ifndef __GM_BUILD_DATE
+#define __GM_BUILD_DATE "unknown"
+#else
+//extern char __GM_BUILD_DATE
+#endif
+
 typedef enum config_error_t {
   CONFIG_INIT_TIMESTAMP_NULL,
   CONFIG_ALLOCATION_FAILED,

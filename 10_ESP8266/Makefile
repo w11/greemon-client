@@ -17,6 +17,8 @@
 BUILD_BASE	= build
 FW_BASE		= firmware
 
+NOW := $(shell date +"%c" | tr ' :' '__')
+
 # base directory for the compiler
 XTENSA_TOOLS_ROOT ?= /opt/esp-open-sdk/xtensa-lx106-elf/bin
 
@@ -39,7 +41,7 @@ EXTRA_INCDIR    = include /opt/esp-open-sdk/include
 LIBS		= c gcc hal pp phy net80211 lwip wpa main
 
 # compiler flags using during compilation of source files
-CFLAGS		= -Os -g -O2 -Wpointer-arith -Wundef -Werror -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals  -D__ets__ -DICACHE_FLASH
+CFLAGS		= -Os -g -O2 -Wpointer-arith -Wundef -Werror -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals  -D__ets__ -DICACHE_FLASH -D__GM_BUILD_DATE=\"$(NOW)\"
 
 # linker flags used to generate the main object file
 LDFLAGS		= -nostdlib -Wl,--no-check-sections -u call_user_start -Wl,-static
