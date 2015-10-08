@@ -13,7 +13,6 @@
 #include "user_config.h"
 
 
-//#include "user_interface.h"
 #include "/opt/esp-open-sdk/sdk/include/ets_sys.h"
 #include "/opt/esp-open-sdk/sdk/include/osapi.h"
 #include "/opt/esp-open-sdk/sdk/include/gpio.h"
@@ -282,6 +281,7 @@ void wifi_ipv4_setDefault(void){
 	IP4_ADDR(&info.netmask, 255, 255, 255, 0);
 
 	wifi_set_ip_info(SOFTAP_IF, &info);
+
 	wifi_softap_dhcps_start();
 }
 
