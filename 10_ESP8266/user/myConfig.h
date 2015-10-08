@@ -70,6 +70,8 @@ typedef struct {
 
 LOCAL config_t* pUser_global_cfg;
 
+
+size_t fs_size();
 void ICACHE_FLASH_ATTR config_print(config_t* config);
 SpiFlashOpResult ICACHE_FLASH_ATTR config_write(config_t* config);
 SpiFlashOpResult ICACHE_FLASH_ATTR config_read(config_t* config);

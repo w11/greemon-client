@@ -5,10 +5,24 @@
 #include "mem.h"
 #include "myConfig.h"
 
+
+/* SEE: http://www.esp8266.com/viewtopic.php?f=13&t=2506&sid=9531563d4d1565af88d4a8330e884622&start=5 */
+size_t fs_size() { // returns the flash chip's size, in BYTES
+  uint32_t id = spi_flash_get_id(); 
+  uint8_t mfgr_id = id & 0xff;
+  uint8_t type_id = (id >> 8) & 0xff; // not relevant for size calculation
+  uint8_t size_id = (id >> 16) & 0xff; // lucky for us, WinBond ID's their chips as a form that lets us calculate the size
+  if(mfgr_id != 0xEF) // 0xEF is WinBond; that's all we care about (for now)
+    return 0;
+  return 1 << size_id;
+}
+
+
 void ICACHE_FLASH_ATTR
 config_print(config_t* config){
 #ifdef DEV_VERSION
   uint8_t i;
+  DBG_OUT("flash-size: %d", fs_size());
   DBG_OUT("cfg-size: %d", sizeof(*config))
   DBG_OUT("build: %s", &__GM_BUILD_DATE);
   DBG_OUT("======= CONFIG START =======");
