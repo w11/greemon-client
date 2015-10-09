@@ -106,9 +106,6 @@ body{ font-family: Helvetica, sans-serif; color: #222; }";
 # define ARRAY_SIZE(a) (uint16_t*)(sizeof(a) / sizeof((a)[0]))
 #endif
 
-#define CR '\r'
-#define LF '\n'
-
 
 typedef struct _HTTPConnection{
 	struct espconn *conn;
@@ -134,6 +131,39 @@ Content-Type: text/plain\r\n\
 Content-Length: 28\r\n\r\n\
 Not Implemented, sorry :(.\r\n";
 
+
+
+/******************************************************************************
+ * FunctionName : webserver_parse_post_content
+ * Description  : parse the content and return an array
+ * Parameters   : pusrdata - Pointer to the sent content
+ * Returns      : none
+*******************************************************************************/
+bool ICACHE_FLASH_ATTR
+webserver_parse_post_content(char *pusrdata, )
+{
+	uint8_t* 		pContent;
+
+	// allocate memory for the settings	
+	// These settings are going to be filled
+	gm_Base_t* 	pBase_data;
+	gm_Srv_t*		pSrv_data;
+	gm_APN_t*		pAPN_data
+	// search for content length 
+
+	// allocate memory for the string
+
+	//TODO ENOUGH
+
+	//pContent = (uint8_t*)os_zalloc(<SIZE>);
+	if ((NULL == pContent) || (NULL == pBase_data) || (NULL == pSrv_data ) || NULL == pAPN_data) {
+		ERR_OUT("allocation for memory failed");
+		return false;
+	} else {
+		// We can go on.
+	}
+	return true;
+}
 
 
 /******************************************************************************
@@ -167,18 +197,6 @@ user_esp_platform_check_ip(void)
     }
 }
 
-/******************************************************************************
- * FunctionName : user_set_station_config
- * Description  : set the router info which ESP8266 station will connect to
- * Parameters   : none
- * Returns      : none
-*******************************************************************************/
-void ICACHE_FLASH_ATTR
-user_wifi_parse_post_config(char * pusrdata){
-  
-
-}
-
 
 /******************************************************************************
  * FunctionName : user_set_station_config
@@ -204,7 +222,7 @@ user_set_station_config(void)
    os_memcpy(&stationConf.password, password, 64);
    wifi_station_set_config(&stationConf);
 
-   	if (true==wifi_station_connect()) {
+   	if (trhue==wifi_station_connect()) {
 		DBG_OUT("Connected to AP %s",&stationConf.ssid);
 	} else {
 		DBG_OUT("Not Connected to AP %s",&stationConf.ssid);
@@ -276,7 +294,7 @@ webserver_recv(void *arg, char *pusrdata, unsigned short length)
 		case 'P': 
 			DBG_OUT("Parsing - Found POST");
 			DBG_OUT(pusrdata);
-      user_wifi_parse_post_config(pusrdata);
+      webserver_parse_post_content(pusrdata);
 			user_set_station_config();
 		break;			
 		default: 
@@ -392,9 +410,9 @@ void webserver_recon(void *arg, sint8 err)
 
     DBG_OUT(">>Client %d.%d.%d.%d:%d Error: %d reconnected\n", 
 			pesp_conn->proto.tcp->remote_ip[0],
-    		pesp_conn->proto.tcp->remote_ip[1],
+    	pesp_conn->proto.tcp->remote_ip[1],
 			pesp_conn->proto.tcp->remote_ip[2],
-    		pesp_conn->proto.tcp->remote_ip[3],
+    	pesp_conn->proto.tcp->remote_ip[3],
 			pesp_conn->proto.tcp->remote_port, 
 			err);
 }
@@ -452,9 +470,9 @@ webserver_regist_connect(void *arg)
 
 	INFO(">> Client %d.%d.%d.%d:%d connected\n", 
 				listening_conn->proto.tcp->remote_ip[0],
-        		listening_conn->proto.tcp->remote_ip[1],
+        listening_conn->proto.tcp->remote_ip[1],
 				listening_conn->proto.tcp->remote_ip[2],
-        		listening_conn->proto.tcp->remote_ip[3],
+        listening_conn->proto.tcp->remote_ip[3],
 				listening_conn->proto.tcp->remote_port);
 
 	// Search for a free slot to handle incoming connection
@@ -487,7 +505,6 @@ webserver_regist_connect(void *arg)
 	webserver_print_clients();
 }
 
-
 /******************************************************************************
  * FunctionName : user_webserver_init
  * Description  : parameter initialize as a server
@@ -496,10 +513,9 @@ webserver_regist_connect(void *arg)
 *******************************************************************************/
 uint8_t webserver_init(uint32_t port) {
 	uint8_t i = 0;
-	uint8_t error_code = 0;
 
-    LOCAL struct espconn webserver_conn;
-    LOCAL esp_tcp webserver_tcp;
+  LOCAL struct espconn webserver_conn;
+  LOCAL esp_tcp webserver_tcp;
 
 	//INFO();
 	DBG_OUT("--- Initializing Webserver ---");
@@ -511,14 +527,10 @@ uint8_t webserver_init(uint32_t port) {
 	}
 
 	// Init Webserver TCP Listening Configuration
-    webserver_conn.type = ESPCONN_TCP;
-    webserver_conn.state = ESPCONN_NONE;
-    webserver_conn.proto.tcp = &webserver_tcp;
-    webserver_conn.proto.tcp->local_port = port;
-
-	// Register Callback function for connection clients at tcp server
-	DBG_OUT("INIT: Register Callback for incoming clients. Addr: %p", &webserver_conn);
-	espconn_regist_connectcb(&webserver_conn, webserver_regist_connect);
+  webserver_conn.type = ESPCONN_TCP;
+  webserver_conn.state = ESPCONN_NONE;
+  webserver_conn.proto.tcp = &webserver_tcp;
+  webserver_conn.proto.tcp->local_port = port;
 
 	//This timeout interval is not very precise, only as reference.
 	//If timeout is set to 0, timeout will be disable and ESP8266 TCP server will
@@ -529,26 +541,32 @@ uint8_t webserver_init(uint32_t port) {
 	//Set the maximum number of TCP clients allowed to connect to ESP8266 TCP Server.
 	espconn_tcp_set_max_con_allow(&webserver_conn, HTTP_CONNECTION_MAX);
 
+	// Register Callback function for connection clients at tcp server
+	DBG_OUT("INIT: Register Callback for incoming clients. Addr: %p", &webserver_conn);
+	espconn_regist_connectcb(&webserver_conn, webserver_regist_connect);
 
 	DBG_OUT("INIT: Starting TCP Server");
-	error_code = espconn_accept(&webserver_conn);
-
-    if (ESPCONN_OK == error_code ) // CREATES TCP SERVER
+	switch (espconn_accept(&webserver_conn))
 	{
-
-		DBG_OUT("=== MEMINFO ===");
-		system_print_meminfo();	
-		DBG_OUT("Free Heap: %u",system_get_free_heap_size());
-
-		DBG_OUT("INIT: Webserver listening at Port %u", port);
-		return error_code;
-	} else {
-		// SOME ERROR OCCURED TODO
-		// ESPCONN_OK         0    No error, everything OK.
-		// ESPCONN_MEM  		- 1    Out of memory error.    
-		// ESPCONN_ARG      -12    Illegal argument.       
-		// ESPCONN_ISCONN   -15    Already connected.      
-		return error_code;
+		case ESPCONN_OK:
+			DBG_OUT("INIT: Webserver listening at Port %u", port);
+			DBG_OUT("Free Heap: %u",system_get_free_heap_size());
+			//DBG_OUT("=== MEMINFO ===");
+			//system_print_meminfo();	
+			return ESPCONN_OK;
+		break;
+		case ESPCONN_MEM:
+			ERR_OUT("Error - ESP is out of memory");
+			return ESPCONN_MEM;
+		break;
+		case ESPCONN_ARG:
+			ERR_OUT("Error - Illegal argument provided");
+			return ESPCONN_ARG;
+		break;
+		case ESPCONN_ISCONN:
+			ERR_OUT("Error - Eebserver is already connected");
+			return ESPCONN_ISCONN;
+		break;
 	}
 	
 }
