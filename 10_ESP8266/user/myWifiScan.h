@@ -3,16 +3,15 @@
 
 
 
-
 /******************************************************************************
- * FunctionName : scan_done
+ * FunctionName : user_wifi_scan_done
  * Description  : scan done callback
  * Parameters   :  arg: contain the aps information;
                           status: scan over status
  * Returns      : none
 *******************************************************************************/
 void ICACHE_FLASH_ATTR
-scan_done(void *arg, STATUS status)
+user_wifi_scan_done(void *arg, STATUS status)
 {
   uint8_t scanCounter = 0;
 
@@ -48,49 +47,26 @@ scan_done(void *arg, STATUS status)
   }
   else
   {
-     os_printf("scan fail !!!\r\n");
+		DBG_OUT("wifi-scan failed");
   }
 
 }
 
-	
-void ICACHE_FLASH_ATTR
-scan_start(void){
-	wifi_station_scan(NULL,scan_done);
-}
-
-
 /******************************************************************************
- * FunctionName : user_scan
+ * FunctionName : user_wifi_scan
  * Description  : wifi scan, only can be called after system init done.
  * Parameters   :  none
  * Returns      : none
 *******************************************************************************/
 void ICACHE_FLASH_ATTR
-user_scan(void)
+user_wifi_scan_start(struct scan_config *config)
 {
    if(wifi_get_opmode() == SOFTAP_MODE)
    {
-     os_printf("ap mode can't scan !!!\r\n");
-     return;
+			DBG_OUT("AP Mode can not scan");
+     	return;
    }
-   wifi_station_scan(NULL,scan_done);
-
-}
-
-
-/******************************************************************************
- * FunctionName : user_init
- * Description  : entry of user application, init user function here
- * Parameters   : none
- * Returns      : none
-*******************************************************************************/
-void user_init(void)
-{
-    os_printf("SDK version:%s\n", system_get_sdk_version());
-   
-
-
+   wifi_station_scan(config,user_wifi_scan_done;
 }
 
 #endif
