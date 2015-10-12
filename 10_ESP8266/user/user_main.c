@@ -49,6 +49,73 @@ void intr_handle_cb(void);
 void enable_reset_interrupt(void);
 
 
+
+
+/******************************************************************************
+ * FunctionName : test_config
+ * Description  : Test routine for configuration file
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+void test_config(void) {
+	config_t test_cfg;	
+	config_t loaded_cfg;
+
+  gm_Data_t test_data[3];
+  gm_APN_t apn_data;
+  gm_Srv_t srv_data;
+
+
+  srv_data.srv_address[0] = 172;
+  srv_data.srv_address[1] = 141;
+  srv_data.srv_address[2] = 1;
+  srv_data.srv_address[3] = 2;
+  srv_data.srv_port = 1337;
+
+  os_memcpy(srv_data.id, "GMID213\0",sizeof(srv_data.token));
+  os_memcpy(srv_data.token, "ABC-TOKEN\0",sizeof(srv_data.token));
+
+
+  test_data[0].timestamp = 0xDEADBEEF;
+  test_data[1].timestamp = 0xCAFEC0DE;
+  test_data[2].timestamp = 0xF000BAAA;
+
+	os_memcpy(apn_data.ssid,"MY_NEW_SSID\0",sizeof(apn_data.ssid));
+	os_memcpy(apn_data.pass,"MY_NEW_PASS\0",sizeof(apn_data.pass));
+
+	test_cfg.magic = CONFIG_MAGIC;	
+	test_cfg.version = CONFIG_VERSION;
+  test_cfg.random = 12345;
+  test_cfg.storedData = 0;
+
+	os_memcpy(test_cfg.gm_apn_data.pass,"MY_OLD_PASS\0",sizeof(test_cfg.gm_apn_data.pass));
+	os_memcpy(test_cfg.gm_apn_data.ssid,"MY_OLD_SSID\0",sizeof(test_cfg.gm_apn_data.ssid));
+
+	test_cfg.gm_auth_data.srv_address[0] = 192;
+	test_cfg.gm_auth_data.srv_address[1] = 168;
+	test_cfg.gm_auth_data.srv_address[2] = 10;
+	test_cfg.gm_auth_data.srv_address[3] = 11;
+	test_cfg.gm_auth_data.srv_port 	= 8080;
+
+	DBG_OUT("CFG:ERASE");
+	config_erase();
+	DBG_OUT("CFG:WRITE");
+	config_write(&test_cfg);
+	DBG_OUT("CFG:READ");
+	config_read(&loaded_cfg);
+	DBG_OUT("CFG:PRINT");
+	config_print(&loaded_cfg);	
+
+  config_init();
+  config_write_dataset(3,test_data);
+  config_write_apn(&apn_data);
+  config_write_srv(&srv_data);
+  config_read(&loaded_cfg);
+  config_print(&loaded_cfg);
+  
+}
+
+
 void i2ctest(){
 	DBG_OUT("=== READ BH1750 ===");
 	myBH1750_Init(BH1750_PIN_SDA,BH1750_PIN_SCL);
@@ -215,7 +282,9 @@ uint16_t earthprobe_adc_read(void) {
  * Returns      : 
 *******************************************************************************/
 void system_init_done(void){
-	//os_timer_setfn(&earthprobe_timer, earthprobe_adc_read, NULL);
+  config_t* cfg;
+
+  //os_timer_setfn(&earthprobe_timer, earthprobe_adc_read, NULL);
 	//os_timer_arm(&earthprobe_timer, 2000, 1);
 
 	//DBG_OUT("INIT: DHT22 initialization");
@@ -250,6 +319,8 @@ void system_init_done(void){
 
 	INFO("=== GREEMON INITIALIZATION END ===");
 	init_done = true;
+
+  test_config();
   //DHT22_init();
 	//os_timer_setfn(&timerDHT, DHT_timerCallback, NULL);
 	//os_timer_arm(&timerDHT, 5000, 1);
@@ -427,69 +498,6 @@ void enable_reset_interrupt(){
 
 }
 
-/******************************************************************************
- * FunctionName : test_config
- * Description  : Test routine for configuration file
- * Parameters   : none
- * Returns      : none
-*******************************************************************************/
-void test_config(void) {
-	config_t test_cfg;	
-	config_t loaded_cfg;
-
-  gm_Data_t test_data[3];
-  gm_APN_t apn_data;
-  gm_Srv_t srv_data;
-
-
-  srv_data.srv_address[0] = 172;
-  srv_data.srv_address[1] = 141;
-  srv_data.srv_address[2] = 1;
-  srv_data.srv_address[3] = 2;
-  srv_data.srv_port = 1337;
-
-  os_memcpy(srv_data.id, "GMID213\0",sizeof(srv_data.token));
-  os_memcpy(srv_data.token, "ABC-TOKEN\0",sizeof(srv_data.token));
-
-
-  test_data[0].timestamp = 0xDEADBEEF;
-  test_data[1].timestamp = 0xCAFEC0DE;
-  test_data[2].timestamp = 0xF000BAAA;
-
-	os_memcpy(apn_data.ssid,"MY_NEW_SSID\0",sizeof(apn_data.ssid));
-	os_memcpy(apn_data.pass,"MY_NEW_PASS\0",sizeof(apn_data.pass));
-
-	test_cfg.magic = CONFIG_MAGIC;	
-	test_cfg.version = CONFIG_VERSION;
-  test_cfg.random = 12345;
-  test_cfg.storedData = 0;
-
-	os_memcpy(test_cfg.gm_apn_data.pass,"MY_OLD_PASS\0",sizeof(test_cfg.gm_apn_data.pass));
-	os_memcpy(test_cfg.gm_apn_data.ssid,"MY_OLD_SSID\0",sizeof(test_cfg.gm_apn_data.ssid));
-
-	test_cfg.gm_auth_data.srv_address[0] = 192;
-	test_cfg.gm_auth_data.srv_address[1] = 168;
-	test_cfg.gm_auth_data.srv_address[2] = 10;
-	test_cfg.gm_auth_data.srv_address[3] = 11;
-	test_cfg.gm_auth_data.srv_port 	= 8080;
-
-	DBG_OUT("CFG:ERASE");
-	config_erase();
-	DBG_OUT("CFG:WRITE");
-	config_write(&test_cfg);
-	DBG_OUT("CFG:READ");
-	config_read(&loaded_cfg);
-	DBG_OUT("CFG:PRINT");
-	config_print(&loaded_cfg);	
-
-  config_init();
-  config_write_dataset(3,test_data);
-  config_write_apn(&apn_data);
-  config_write_srv(&srv_data);
-  config_read(&loaded_cfg);
-  config_print(&loaded_cfg);
-  
-}
 
 
 /******************************************************************************

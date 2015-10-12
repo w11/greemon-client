@@ -23,7 +23,7 @@ config_print(config_t* config){
 #ifdef DEV_VERSION
   uint8_t i;
   DBG_OUT("flash-size: %d", fs_size());
-  DBG_OUT("cfg-size: %d", sizeof(*config))
+  DBG_OUT("cfg-size: %d", sizeof(*config));
   DBG_OUT("build: %s", &__GM_BUILD_DATE);
   DBG_OUT("======= CONFIG START =======");
   DBG_OUT("ADDR: \t%x", config);
