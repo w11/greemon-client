@@ -9,6 +9,7 @@
 
 #include "espconn.h" // FOR WEBSERVER
 #include "mem.h"
+#include "myConfig.h"
 
 os_timer_t test_station_ip;
 
@@ -140,15 +141,15 @@ Not Implemented, sorry :(.\r\n";
  * Returns      : none
 *******************************************************************************/
 bool ICACHE_FLASH_ATTR
-webserver_parse_post_content(char *pusrdata, )
+webserver_parse_post_content(char *pusrdata)
 {
 	uint8_t* 		pContent;
 
 	// allocate memory for the settings	
 	// These settings are going to be filled
-	gm_Base_t* 	pBase_data;
-	gm_Srv_t*		pSrv_data;
-	gm_APN_t*		pAPN_data
+	//gm_Base_t* 	pBase_data;
+	//gm_Srv_t*		pSrv_data;
+	//gm_APN_t*		pAPN_data
 	// search for content length 
 
 	// allocate memory for the string
@@ -156,12 +157,12 @@ webserver_parse_post_content(char *pusrdata, )
 	//TODO ENOUGH
 
 	//pContent = (uint8_t*)os_zalloc(<SIZE>);
-	if ((NULL == pContent) || (NULL == pBase_data) || (NULL == pSrv_data ) || NULL == pAPN_data) {
-		ERR_OUT("allocation for memory failed");
-		return false;
-	} else {
+	//if ((NULL == pContent) || (NULL == pBase_data) || (NULL == pSrv_data ) || NULL == pAPN_data) {
+	//	ERR_OUT("allocation for memory failed");
+	//	return false;
+	//} else {
 		// We can go on.
-	}
+	//}
 	return true;
 }
 
@@ -222,7 +223,7 @@ user_set_station_config(void)
    os_memcpy(&stationConf.password, password, 64);
    wifi_station_set_config(&stationConf);
 
-   	if (trhue==wifi_station_connect()) {
+   	if (true==wifi_station_connect()) {
 		DBG_OUT("Connected to AP %s",&stationConf.ssid);
 	} else {
 		DBG_OUT("Not Connected to AP %s",&stationConf.ssid);
