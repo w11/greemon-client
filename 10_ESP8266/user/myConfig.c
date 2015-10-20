@@ -25,6 +25,7 @@ config_print(config_t* config){
   DBG_OUT("flash-size: %d", fs_size());
   DBG_OUT("cfg-size: %d", sizeof(*config));
   DBG_OUT("build: %s", &__GM_BUILD_DATE);
+  DBG_OUT("rand: %s", &__GM_BUILD_RAND_NUMBER);
   DBG_OUT("======= CONFIG START =======");
   DBG_OUT("ADDR: \t%x", config);
   DBG_OUT("MAGC: \t%x", config->magic);

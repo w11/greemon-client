@@ -18,6 +18,7 @@ BUILD_BASE	= build
 FW_BASE		= firmware
 
 NOW := $(shell date +"%c" | tr ' :' '__')
+GM_RAND := $(shell rand -u -M 2147483647)
 
 # base directory for the compiler
 XTENSA_TOOLS_ROOT ?= /opt/esp-open-sdk/xtensa-lx106-elf/bin
@@ -40,9 +41,8 @@ EXTRA_INCDIR    = include /opt/esp-open-sdk/include
 # libraries used in this project, mainly provided by the SDK
 LIBS		= c gcc hal pp phy net80211 lwip wpa main
 
-# compiler flags using during compilation of source files
-CFLAGS		= -Os -g -O2 -Wpointer-arith -Wundef -Werror -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals  -D__ets__ -DICACHE_FLASH -D__GM_BUILD_DATE=\"$(NOW)\"
-
+# compiler flags using during compilation of source filesCFLAGS		= -Os -g -O2 -Wpointer-arith -Wundef -Werror -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals  -D__ets__ -DICACHE_FLASH -D__GM_BUILD_DATE=\"$(NOW)\" -D__GM_BUILD_RANRANDD_NUMBER=\"$(GM_RAND)\"
+CFLAGS		= -Os -g -O2 -Wpointer-arith -Wundef -Werror -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mtext-section-literals  -D__ets__ -DICACHE_FLASH -D__GM_BUILD_DATE=\"$(NOW)\" -D__GM_BUILD_RAND_NUMBER=\"$(GM_RAND)\"
 # linker flags used to generate the main object file
 LDFLAGS		= -nostdlib -Wl,--no-check-sections -u call_user_start -Wl,-static
 

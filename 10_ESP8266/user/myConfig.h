@@ -22,6 +22,10 @@
 #define CONFIG_STD_APNAME "GREEMON"
 #define CONFIG_STD_PASS ""
 
+#ifndef __GM_BUILD_RAND_NUMBER
+#define __GM_BUILD_RAND_NUMBER "00000000"
+#endif
+
 #ifndef __GM_BUILD_DATE
 #define __GM_BUILD_DATE "unknown build date"
 #endif
@@ -57,8 +61,8 @@ typedef struct {
 
 typedef struct {
 	// CLIENT IDENTIFIER
-	uint8_t 		name[32];								// name of the device
-	uint32_t		deep_sleep_us;					// in us		
+	uint8_t name[32];								// name of the device
+	uint32_t deep_sleep_us;					// in us		
 } gm_Base_t;
 
 typedef struct {
