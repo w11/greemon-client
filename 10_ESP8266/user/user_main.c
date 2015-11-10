@@ -395,12 +395,12 @@ wifi_handle_event_cb(System_Event_t *evt)
         user_sntp_start();
 		break;
 		case EVENT_SOFTAPMODE_STACONNECTED:
-			DBG_OUT("New Client: " MACSTR "joined, AID = %d",
+			DBG_OUT("New Client: " MACSTR " joined, AID = %d",
 				MAC2STR(evt->event_info.sta_connected.mac),
 				evt->event_info.sta_connected.aid);
 		break;
 		case EVENT_SOFTAPMODE_STADISCONNECTED:
-			DBG_OUT("Old Client: " MACSTR "leaved, AID = %d",
+			DBG_OUT("Old Client: " MACSTR " leaved, AID = %d",
 				MAC2STR(evt->event_info.sta_disconnected.mac),
 				evt->event_info.sta_disconnected.aid);
 		break;
