@@ -51,6 +51,18 @@ LOCAL uint8_t aboutPage[] = "<html>\
 </body>\
 </html>"; 
 
+LOCAL uint8_t savePage[] = "<html>\
+<head>\
+<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />\
+<link href=\"data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAIIjAAA2DgCMYRYAYz8AAABUFwDHnFIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACIiVQAAAABENVURMwAABDM1URZmMABDMzMRFmZjAEMzM2ZmEWUEM1VRYWEREVQzNVFhERERVDVTFhERERFUNTMWEREREVQzNRZmYRERVDMzZhYRERFQQzNmEREWYwBDM2ZhERFjAAQzZmEWZjAAAEQ2ZmYzAAAAAEQzMwAAD4HwAA4AcAAMADAACAAQAAgAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIABAACAAQAAwAMAAOAHAAD4HwAA\" rel=\"icon\" type=\"image/x-icon\" />\
+</head>\
+<body>\
+	<h1>Greemon Interface</h1>\
+	<p>Settings saved!</p>\
+	<p>Greemon is restarting</p>\
+</body>\
+</html>"; 
+
 // Info: According to the documentation of the standard, the length of an SSID should be a maximum of 32 characters
 // Password 8-63 (64?)
 LOCAL uint8_t configPage[] = "<!DOCTYPE html>\
@@ -216,7 +228,7 @@ user_set_station_config(gm_APN_t* apn)
 
 
 /******************************************************************************
- * FunctionName : webserver_parse_post_content
+ * FunctionName : webserver_parse_post_content_length
  * Description  : parse the content and return an array
  * Parameters   : pusrdata - Pointer to the sent content
  *								length - recieved data length
@@ -236,7 +248,7 @@ uint16_t webserver_parse_post_content_length(char *pusrdata, unsigned short *pLe
 	while ( i < post_length )
  	{
 		if (0 == os_strncmp(pusrdata+i,"Content-Length", 14 )) {
-			DBG_OUT("Found Content-Length");
+			INFO("Found Content-Length");
 			sp = i+16; // skip "Content-Length: "
 			noc = 0;
 			// Find \r\n
@@ -261,17 +273,19 @@ uint16_t webserver_parse_post_content_length(char *pusrdata, unsigned short *pLe
 	}
 
 	// found \r\n after value of noc characters
-	pLenTemp = (char*)os_zalloc(sizeof(char) * noc);
-	//DBG_OUT("number of chars: %d", noc);
+	pLenTemp = (char*)os_zalloc(sizeof(char) * noc+1);
+	if (NULL == pLenTemp) return false; // TODO return Code
+	DBG_OUT("number of chars: %d", noc);
 	os_memcpy(pLenTemp,pusrdata+sp,noc);
+	pLenTemp[noc] = '\0'; // add termination
 	DBG_OUT("pLenTemp: %s", pLenTemp);
-
 	content_length = atoi(pLenTemp);
 	DBG_OUT("length: %u",content_length);
 
+	os_free(pLenTemp);
+
 	return content_length;
 }
-
 
 /******************************************************************************
  * FunctionName : webserver_parse_post_content
@@ -287,13 +301,10 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 	gm_Base_t 	pBase_data;
 	gm_Srv_t		pSrv_data;
 	gm_APN_t		pAPN_data;
+	uint16_t	post_length = *pLength;
 
-
-
-	uint16_t    clen = 0;
-	uint16_t		startLen = 0;
-	uint16_t    endLen = 0;
-	uint8_t 		numChars = 0;
+	char* pPost_content;
+	uint16_t clen = 0;
 
 	//DBG_OUT("POST-DATA");
 	//DBG_OUT(pusrdata);
@@ -302,15 +313,20 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 	INFO("Content-Length (clen) = %u",clen);
 
 	// 2 		Allocate Memory for x Size of Content Length
+	pPost_content = (char*)os_zalloc(sizeof(char) * clen+1);
+	if (NULL != pPost_content) {
+		// 4 		Copy Characters into allocated memory
+		os_memcpy(pPost_content,pusrdata+post_length-clen,clen);
+		pPost_content[clen] = '\0'; // add termination
 
-	// 3 		FIND \r\n\r\n
+		DBG_OUT("Copied: %s", pPost_content);
 
-	// 4 		Copy x Characters after \r\n\r\n into allocated memory
-
-	// 5 		Parse and save
-
-	
-	return true;
+		os_free(pPost_content);
+		// 5 		Parse and save
+	} else {
+		return false; // TODO return Code	
+	}
+		return true;
 }
 
 
@@ -331,96 +347,42 @@ webserver_recv(void *arg, char *pusrdata, unsigned short length)
 	uint8_t headerParser = 0;
 	char *parsedRequest = NULL;
 	bool validRequest = false;
+	uint16_t charstocopy = 0;
 	
 	//TODO REMOVE TEST DATA
 	gm_APN_t apn_test;
 
 	INFO("Recieved Message from Client");
-	//DBG_OUT("--- Message Request No.%u Start ---",requestNum++);
-	//DBG_OUT(pusrdata);
-	//DBG_OUT("--- Message End ---");
 
 // PARSE GET  COMMAND
 	switch (pusrdata[0]) {
 		case 'G': 
 			DBG_OUT("Parsing - Found GET");
-			// Find end of get request               vvvv
-			// GET /index.html?this=0&that=1 HTTP/1.1\r\n
-			// After that we dont need additional 13 Characters:
-			// We dont need "GET /" and " HT T  P  1  .  1   
-			//				 12345       789 10 11 12 13 14  
-			// We allocate (Character to End of Line - 14 Characters) memory
-			// to store: index.html?this=0&that=1 (25 chars)
-			// for that we need to copy the source at the 5th position x characters long. 
-			for (headerParser=0; headerParser<=255; headerParser++) {
-				if ('\r' == pusrdata[headerParser] && '\n' == pusrdata[headerParser+1]) {
-					parsedRequest = (char*) os_malloc(sizeof(char)*headerParser-15);  // TODO EVALUATE
-					os_memcpy(parsedRequest, pusrdata+5, headerParser-14);
-					//TODO: Was passiert, wenn die Hauptseite aufgerufen wird?
-					// Dann wird 14-14 gerechnet und 0 Byte angefordert. Abfangen!
-					if (NULL == parsedRequest) {
-						DBG_OUT("Malloc failed");
-						validRequest = true;
-					} else {
-						DBG_OUT("Client requested: '%s'", parsedRequest);		
-						validRequest = false;		
-					}								
- 					os_free(parsedRequest);
-					break;
-				}	
-				if (255==headerParser) {
-					validRequest=false; //TODO: Eleganter? Did not find  \r\n	
-					ERR_OUT("Could not parse header");
-				} 	
-			} 
-		break;
-		case 'P': 
-			DBG_OUT("Parsing - Found POST");
-			//DBG_OUT(pusrdata);
-      		webserver_parse_post_content(pusrdata,&length);
-			// !TODO: USE REAL DATA
-			//os_memcpy(apn_test.ssid, "EvoraIT\0", CONFIG_SIZE_SSID);
-			//os_memcpy(apn_test.pass, "Mobile\0", CONFIG_SIZE_PASS);
-			//user_set_station_config(&apn_test);
-
-			// Save Server and Port
-		break;			
-		default: 
-			DBG_OUT("Parsing - Found NOT IMPLEMENTED");
-		break;
-	}
-
-/*
-
-*/
-
-
-// Parse Header	
-	if (os_strncmp(pusrdata,"GET / ", 6 )==0)
-	{
-
-// Insert the contents
-		l = os_sprintf(responseBuffer, 
+			// Parse Header	
+			if ( 0 == os_strncmp(pusrdata,"GET / ", 6 ) )
+			{
+			// Insert the contents
+				l = os_sprintf(responseBuffer, 
 "HTTP/1.1 200 OK\r\n\
 Content-Type: text/html\r\n\
 Server: Greemon/0.0.1\r\n\
 Content-Length: %u\r\n\
 Connection: Keep-Alive\r\n\r\n\
 %s",ARRAY_SIZE(indexPage)-1,indexPage);
-	} else if (os_strncmp(pusrdata,"GET /about.html ", 16 )==0) //GET /about.html HTTP/1.1
-	{
-		// Insert the contents
-		l = os_sprintf(responseBuffer, 
+			} else if (os_strncmp(pusrdata,"GET /about.html ", 16 )==0) //GET /about.html HTTP/1.1
+			{
+				// Insert the contents
+				l = os_sprintf(responseBuffer, 
 "HTTP/1.1 200 OK\r\n\
 Content-Type: text/html\r\n\
 Server: Greemon/0.0.1\r\n\
 Content-Length: %u\r\n\
 Connection: Keep-Alive\r\n\r\n\
 %s",ARRAY_SIZE(aboutPage)-1,aboutPage);
-	} else if (os_strncmp(pusrdata,"GET /config.html ", 17 )==0)
-	{
-		//TODO: DOCUMENTATION application/x-www-form-urlencoded
-		l = os_sprintf(responseBuffer, 
+			} else if (os_strncmp(pusrdata,"GET /config.html ", 17 )==0)
+			{
+				//TODO: DOCUMENTATION application/x-www-form-urlencoded
+				l = os_sprintf(responseBuffer, 
 "HTTP/1.1 200 OK\r\n\
 Content-Type: text/html\r\n\
 Server: Greemon/0.0.1\r\n\
@@ -428,21 +390,47 @@ Accept: application/x-www-form-urlencoded\r\n\
 Content-Length: %u\r\n\
 Connection: Keep-Alive\r\n\r\n\
 %s",ARRAY_SIZE(configPage)-1,configPage);	
-	} else if (os_strncmp(pusrdata,"GET /style.css ", 15 )==0)
-	{
-		l = os_sprintf(responseBuffer, 
+			} else if (os_strncmp(pusrdata,"GET /style.css ", 15 )==0)
+			{
+				l = os_sprintf(responseBuffer, 
 "HTTP/1.1 200 OK\r\n\
 Content-Type: text/css\r\n\
 Server: Greemon/0.0.1\r\n\
 Content-Length: %u\r\n\
 Connection: Keep-Alive\r\n\r\n\
 %s",ARRAY_SIZE(styleSheet)-1,styleSheet);
-	} else {
-		DBG_OUT("Not Implemented :(");
-		// FOR OTHERS: Error Code: 501 - Not Implemented 	
-		l = os_sprintf(responseBuffer, httpNotImplementedHeader); 
-	}
+			} else {
+				DBG_OUT("Not Implemented :(");
+				// FOR OTHERS: Error Code: 404 - Not found 	
+				l = os_sprintf(responseBuffer, httpNotFoundHeader); 
+			}
 
+		break;
+		case 'P': 
+			DBG_OUT("Parsing - Found POST");
+      webserver_parse_post_content(pusrdata,&length);
+			// !TODO: USE REAL DATA
+			//os_memcpy(apn_test.ssid, "EvoraIT\0", CONFIG_SIZE_SSID);
+			//os_memcpy(apn_test.pass, "Mobile\0", CONFIG_SIZE_PASS);
+			//user_set_station_config(&apn_test);
+
+			// Save Server and Port
+
+// Insert the contents
+			l = os_sprintf(responseBuffer, 
+"HTTP/1.1 200 OK\r\n\
+Content-Type: text/html\r\n\
+Server: Greemon/0.0.1\r\n\
+Content-Length: %u\r\n\
+Connection: Keep-Alive\r\n\r\n\
+%s",ARRAY_SIZE(savePage)-1,savePage);
+		break;			
+		default: 
+				DBG_OUT("Parsing - Found NOT IMPLEMENTED");
+				// FOR OTHERS: Error Code: 501 - Not Implemented 	
+				l = os_sprintf(responseBuffer, httpNotImplementedHeader); 
+		break;
+	}
 
 	DBG_OUT("Starting response.");
 	if (0==espconn_sent(clientConnectionPtr, (uint8_t*)responseBuffer, l) ) {
