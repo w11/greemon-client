@@ -1,6 +1,9 @@
 #ifndef __MY_WIFI_SERVER_H__
 #define __MY_WIFI_SERVER_H__
 
+//#define WEBSRV_DEBUG_PRINT_CLIENTS
+
+
 #define HTTP_VERSION "0.1"
 #define HTTP_CONNECTION_MAX 5
 #define HTTP_PORT 80
@@ -219,72 +222,84 @@ user_set_station_config(gm_APN_t* apn)
  *								length - recieved data length
  * Returns      : bool - config could be saved or not
 *******************************************************************************/
+uint16_t webserver_parse_post_content_length(char *pusrdata, unsigned short *pLength)
+{
+	uint16_t 	sp = 0; // start parsing
+	uint8_t 	noc = 0; // number of characters to copy
+	uint16_t 	content_length = 0;
+	char*	pLenTemp;	
+	uint16_t	post_length = *pLength;
+	uint16_t 	i = 0; 
+
+
+	// FIND CONTENT LENGTH
+	while ( i < post_length )
+ 	{
+		if (0 == os_strncmp(pusrdata+i,"Content-Length", 14 )) {
+			DBG_OUT("Found Content-Length");
+			sp = i+16; // skip "Content-Length: "
+			noc = 0;
+			// Find \r\n
+			if ('\r' == pusrdata[sp+1] && '\n' == pusrdata[sp+2]) {
+				noc = 1;
+				break;
+			} else
+			if ('\r' == pusrdata[sp+2] && '\n' == pusrdata[sp+3]) {
+				noc = 2;
+				break;
+			} else
+			if ('\r' == pusrdata[sp+3] && '\n' == pusrdata[sp+4]) {
+				noc = 3;
+				break;
+			} else {
+				ERR_OUT("Did not find \r\n")
+				// else \r\n comes toooo late for us or never
+				return false;
+			}
+		}
+		i++;
+	}
+
+	// found \r\n after value of noc characters
+	pLenTemp = (char*)os_zalloc(sizeof(char) * noc);
+	//DBG_OUT("number of chars: %d", noc);
+	os_memcpy(pLenTemp,pusrdata+sp,noc);
+	DBG_OUT("pLenTemp: %s", pLenTemp);
+
+	content_length = atoi(pLenTemp);
+	DBG_OUT("length: %u",content_length);
+
+	return content_length;
+}
+
+
+/******************************************************************************
+ * FunctionName : webserver_parse_post_content
+ * Description  : parse the content and return an array
+ * Parameters   : pusrdata - Pointer to the sent content
+ *								length - recieved data length
+ * Returns      : bool - config could be saved or not
+*******************************************************************************/
 bool ICACHE_FLASH_ATTR
-webserver_parse_post_content(char *pusrdata, unsigned short length)
+webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 {
 	// These settings are going to be filled
 	gm_Base_t 	pBase_data;
 	gm_Srv_t		pSrv_data;
 	gm_APN_t		pAPN_data;
 
-	uint16_t 		i = 0; 
+
+
 	uint16_t    clen = 0;
 	uint16_t		startLen = 0;
 	uint16_t    endLen = 0;
 	uint8_t 		numChars = 0;
 
-	uint8_t*		pLenTemp;
+	//DBG_OUT("POST-DATA");
+	//DBG_OUT(pusrdata);
 
-	DBG_OUT("POST-DATA:");
-	DBG_OUT(pusrdata);
-
-	for (i = 0; i<=length; i++)
-	{
-	// 1 		FIND Field: Content-Length and copy the value between Spaces (Ascii 0x20?)
-		if (0 == os_strncmp(pusrdata+i,"Content-Length", 14 ))
-		{
-			break; // Skip for because we found the keyword
-		} else {
-			return false; // Keyword not found
-		}
-	}
-
-	startLen = i+16; //Skip "Content-Length: "
-	INFO("Found Content-Length");
-	DBG_OUT("at position %d", startLen);
-
-	// Skip to number
-	for (endLen = startLen; '\r' != pusrdata[endLen]; endLen++);
-
-	DBG_OUT("to pos: %d", endLen);				
-	numChars = (endLen-startLen);
-
-	pLenTemp = (uint8_t*)os_zalloc(sizeof(uint8_t) * numChars);
-	DBG_OUT("number of chars: %d", numChars);
-	
-	if (NULL != pLenTemp)
-	{
-		os_memcpy(pLenTemp, pusrdata+startLen, endLen-startLen);
-		DBG_OUT("TEMP value: %u%u", pLenTemp[0], pLenTemp[1]);
-	} else {
-		ERR_OUT("error allocating Memory for pLenTemp");
-	}
-
-	//os_memcpy(atoi(clen),pusrdata+startLen,endLen-startLen);
-	for (i = 0; i <= numChars; i++)
-	{
-			clen = atoi(&pLenTemp);
-	}
-	//clen = atoi(&pLenTemp);
-	os_free(pLenTemp);
-
-
-	DBG_OUT("value: %d",clen);
-	// Read the Content-Length Value
-
-
-			/* get POST data length */
-			//ptConnection->ptPost->cbPostLength = atoi(pszHeader + iIndex + 1);
+	clen = webserver_parse_post_content_length(pusrdata, pLength);
+	INFO("Content-Length (clen) = %u",clen);
 
 	// 2 		Allocate Memory for x Size of Content Length
 
@@ -293,7 +308,8 @@ webserver_parse_post_content(char *pusrdata, unsigned short length)
 	// 4 		Copy x Characters after \r\n\r\n into allocated memory
 
 	// 5 		Parse and save
-		
+
+	
 	return true;
 }
 
@@ -313,13 +329,11 @@ webserver_recv(void *arg, char *pusrdata, unsigned short length)
 	uint8_t responseBuffer[4096]; //Because the StyleSheet is this large
 	uint16_t l=0;
 	uint8_t headerParser = 0;
-	uint8_t *parsedRequest = NULL;
+	char *parsedRequest = NULL;
 	bool validRequest = false;
 	
 	//TODO REMOVE TEST DATA
 	gm_APN_t apn_test;
-
-	
 
 	INFO("Recieved Message from Client");
 	//DBG_OUT("--- Message Request No.%u Start ---",requestNum++);
@@ -340,7 +354,7 @@ webserver_recv(void *arg, char *pusrdata, unsigned short length)
 			// for that we need to copy the source at the 5th position x characters long. 
 			for (headerParser=0; headerParser<=255; headerParser++) {
 				if ('\r' == pusrdata[headerParser] && '\n' == pusrdata[headerParser+1]) {
-					parsedRequest = (uint8_t*) os_malloc(headerParser-14);  // TODO EVALUATE
+					parsedRequest = (char*) os_malloc(sizeof(char)*headerParser-15);  // TODO EVALUATE
 					os_memcpy(parsedRequest, pusrdata+5, headerParser-14);
 					//TODO: Was passiert, wenn die Hauptseite aufgerufen wird?
 					// Dann wird 14-14 gerechnet und 0 Byte angefordert. Abfangen!
@@ -363,11 +377,11 @@ webserver_recv(void *arg, char *pusrdata, unsigned short length)
 		case 'P': 
 			DBG_OUT("Parsing - Found POST");
 			//DBG_OUT(pusrdata);
-      webserver_parse_post_content(pusrdata,length);
+      		webserver_parse_post_content(pusrdata,&length);
 			// !TODO: USE REAL DATA
-			os_memcpy(apn_test.ssid, "EvoraIT\0", CONFIG_SIZE_SSID);
-			os_memcpy(apn_test.pass, "Mobile\0", CONFIG_SIZE_PASS);
-			user_set_station_config(&apn_test);
+			//os_memcpy(apn_test.ssid, "EvoraIT\0", CONFIG_SIZE_SSID);
+			//os_memcpy(apn_test.pass, "Mobile\0", CONFIG_SIZE_PASS);
+			//user_set_station_config(&apn_test);
 
 			// Save Server and Port
 		break;			
@@ -449,7 +463,7 @@ Connection: Keep-Alive\r\n\r\n\
 *******************************************************************************/
 LOCAL void ICACHE_FLASH_ATTR
 webserver_print_clients(){
-
+#ifdef WEBSRV_DEBUG_PRINT_CLIENTS
 	DBG_OUT("=== CONNECTION POOL STATUS ===");	
 	uint8_t i = 0;
 	for (i=0; i<HTTP_CONNECTION_MAX; i++) {
@@ -471,6 +485,7 @@ webserver_print_clients(){
 			}	
 		}
 	}
+#endif
 }
 
 
