@@ -134,37 +134,6 @@ Not Implemented, sorry :(.\r\n";
 
 
 
-/******************************************************************************
- * FunctionName : webserver_parse_post_content
- * Description  : parse the content and return an array
- * Parameters   : pusrdata - Pointer to the sent content
- * Returns      : none
-*******************************************************************************/
-bool ICACHE_FLASH_ATTR
-webserver_parse_post_content(char *pusrdata)
-{
-	uint8_t* 		pContent;
-
-	// allocate memory for the settings	
-	// These settings are going to be filled
-	//gm_Base_t* 	pBase_data;
-	//gm_Srv_t*		pSrv_data;
-	//gm_APN_t*		pAPN_data
-	// search for content length 
-
-	// allocate memory for the string
-
-	//TODO ENOUGH
-
-	//pContent = (uint8_t*)os_zalloc(<SIZE>);
-	//if ((NULL == pContent) || (NULL == pBase_data) || (NULL == pSrv_data ) || NULL == pAPN_data) {
-	//	ERR_OUT("allocation for memory failed");
-	//	return false;
-	//} else {
-		// We can go on.
-	//}
-	return true;
-}
 
 
 /******************************************************************************
@@ -206,27 +175,33 @@ user_esp_platform_check_ip(void)
  * Returns      : none
 *******************************************************************************/
 void ICACHE_FLASH_ATTR
-user_set_station_config(void)
+user_set_station_config(gm_APN_t* apn)
 {
-	DBG_OUT("INIT: Set Station Config")
+	DBG_OUT("WIFISERVER: Set Station Config")
 	wifi_station_disconnect();
-   // Wifi configuration
-   char ssid[32] = "osiris";
-   char password[64] = "scheka123";
-   struct station_config stationConf;
 
-   //need not mac address
-   stationConf.bssid_set = 0;
+	// save to config
+	config_write_apn(apn);
+
+	// load this configuration to the esp
+  //char ssid[32] = "osiris";
+  //char password[64] = "scheka123";
+  
+	// Create the struc the esp needs
+	struct station_config stationConf;
+  // need not mac address
+  stationConf.bssid_set = 0;
    
-   //Set ap settings
-   os_memcpy(&stationConf.ssid, ssid, 32);
-   os_memcpy(&stationConf.password, password, 64);
-   wifi_station_set_config(&stationConf);
+	//Set ap settings
+	os_memcpy(&stationConf.ssid, apn->ssid, CONFIG_SIZE_SSID);
+	os_memcpy(&stationConf.password, apn->pass, CONFIG_SIZE_PASS);
+	DBG_OUT("Loading ssid and password into esp");
+	wifi_station_set_config(&stationConf);
 
-   	if (true==wifi_station_connect()) {
+	if (true==wifi_station_connect()) {
 		DBG_OUT("Connected to AP %s",&stationConf.ssid);
 	} else {
-		DBG_OUT("Not Connected to AP %s",&stationConf.ssid);
+		DBG_OUT("Not Connected to AP %s, with password: %s",&stationConf.ssid, &stationConf.password);
 	}
 
    //set a timer to check whether got ip from router succeed or not.
@@ -235,6 +210,93 @@ user_set_station_config(void)
    os_timer_arm(&test_station_ip, 100, 0);
 
 }
+
+
+/******************************************************************************
+ * FunctionName : webserver_parse_post_content
+ * Description  : parse the content and return an array
+ * Parameters   : pusrdata - Pointer to the sent content
+ *								length - recieved data length
+ * Returns      : bool - config could be saved or not
+*******************************************************************************/
+bool ICACHE_FLASH_ATTR
+webserver_parse_post_content(char *pusrdata, unsigned short length)
+{
+	// These settings are going to be filled
+	gm_Base_t 	pBase_data;
+	gm_Srv_t		pSrv_data;
+	gm_APN_t		pAPN_data;
+
+	uint16_t 		i = 0; 
+	uint16_t    clen = 0;
+	uint16_t		startLen = 0;
+	uint16_t    endLen = 0;
+	uint8_t 		numChars = 0;
+
+	uint8_t*		pLenTemp;
+
+	DBG_OUT("POST-DATA:");
+	DBG_OUT(pusrdata);
+
+	for (i = 0; i<=length; i++)
+	{
+	// 1 		FIND Field: Content-Length and copy the value between Spaces (Ascii 0x20?)
+		if (0 == os_strncmp(pusrdata+i,"Content-Length", 14 ))
+		{
+			break; // Skip for because we found the keyword
+		} else {
+			return false; // Keyword not found
+		}
+	}
+
+	startLen = i+16; //Skip "Content-Length: "
+	INFO("Found Content-Length");
+	DBG_OUT("at position %d", startLen);
+
+	// Skip to number
+	for (endLen = startLen; '\r' != pusrdata[endLen]; endLen++);
+
+	DBG_OUT("to pos: %d", endLen);				
+	numChars = (endLen-startLen);
+
+	pLenTemp = (uint8_t*)os_zalloc(sizeof(uint8_t) * numChars);
+	DBG_OUT("number of chars: %d", numChars);
+	
+	if (NULL != pLenTemp)
+	{
+		os_memcpy(pLenTemp, pusrdata+startLen, endLen-startLen);
+		DBG_OUT("TEMP value: %u%u", pLenTemp[0], pLenTemp[1]);
+	} else {
+		ERR_OUT("error allocating Memory for pLenTemp");
+	}
+
+	//os_memcpy(atoi(clen),pusrdata+startLen,endLen-startLen);
+	for (i = 0; i <= numChars; i++)
+	{
+			clen = atoi(&pLenTemp);
+	}
+	//clen = atoi(&pLenTemp);
+	os_free(pLenTemp);
+
+
+	DBG_OUT("value: %d",clen);
+	// Read the Content-Length Value
+
+
+			/* get POST data length */
+			//ptConnection->ptPost->cbPostLength = atoi(pszHeader + iIndex + 1);
+
+	// 2 		Allocate Memory for x Size of Content Length
+
+	// 3 		FIND \r\n\r\n
+
+	// 4 		Copy x Characters after \r\n\r\n into allocated memory
+
+	// 5 		Parse and save
+		
+	return true;
+}
+
 
 /******************************************************************************
  * FunctionName : webserver_recv
@@ -247,12 +309,16 @@ user_set_station_config(void)
 LOCAL void ICACHE_FLASH_ATTR
 webserver_recv(void *arg, char *pusrdata, unsigned short length)
 {
-    struct espconn *clientConnectionPtr = arg;
+	struct espconn *clientConnectionPtr = arg;
 	uint8_t responseBuffer[4096]; //Because the StyleSheet is this large
 	uint16_t l=0;
 	uint8_t headerParser = 0;
 	uint8_t *parsedRequest = NULL;
 	bool validRequest = false;
+	
+	//TODO REMOVE TEST DATA
+	gm_APN_t apn_test;
+
 	
 
 	INFO("Recieved Message from Client");
@@ -276,6 +342,8 @@ webserver_recv(void *arg, char *pusrdata, unsigned short length)
 				if ('\r' == pusrdata[headerParser] && '\n' == pusrdata[headerParser+1]) {
 					parsedRequest = (uint8_t*) os_malloc(headerParser-14);  // TODO EVALUATE
 					os_memcpy(parsedRequest, pusrdata+5, headerParser-14);
+					//TODO: Was passiert, wenn die Hauptseite aufgerufen wird?
+					// Dann wird 14-14 gerechnet und 0 Byte angefordert. Abfangen!
 					if (NULL == parsedRequest) {
 						DBG_OUT("Malloc failed");
 						validRequest = true;
@@ -294,15 +362,23 @@ webserver_recv(void *arg, char *pusrdata, unsigned short length)
 		break;
 		case 'P': 
 			DBG_OUT("Parsing - Found POST");
-			DBG_OUT(pusrdata);
-      webserver_parse_post_content(pusrdata);
-			user_set_station_config();
+			//DBG_OUT(pusrdata);
+      webserver_parse_post_content(pusrdata,length);
+			// !TODO: USE REAL DATA
+			os_memcpy(apn_test.ssid, "EvoraIT\0", CONFIG_SIZE_SSID);
+			os_memcpy(apn_test.pass, "Mobile\0", CONFIG_SIZE_PASS);
+			user_set_station_config(&apn_test);
+
+			// Save Server and Port
 		break;			
 		default: 
 			DBG_OUT("Parsing - Found NOT IMPLEMENTED");
 		break;
 	}
 
+/*
+
+*/
 
 
 // Parse Header	

@@ -317,8 +317,8 @@ void system_init_done(void){
     break;
   }
 
-	INFO("=== GREEMON INITIALIZATION END ===");
-	init_done = true;
+  INFO("=== GREEMON INITIALIZATION END ===");
+  init_done = true;
 
   test_config();
   //DHT22_init();
@@ -515,8 +515,8 @@ void user_init(void) {
 	
 	os_delay_us(1000);
 
-	//DBG_OUT("INIT: Webserver initialization");
-	//webserver_init(HTTP_PORT);
+	DBG_OUT("INIT: Webserver initialization");
+	webserver_init(HTTP_PORT);
 /*
 	DBG_OUT("=== MEMORY INFO ===");
 	system_print_meminfo();	
