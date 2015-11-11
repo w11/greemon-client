@@ -48,8 +48,8 @@ typedef struct {
 // 96 Bytes
 
 typedef struct {
-	uint8_t     id[32];               // unique recieved from server
-	uint8_t     token[CONFIG_SIZE_TKN];            // unique recieved from server
+	char     	id[32];               // unique recieved from server
+	char     	token[CONFIG_SIZE_TKN];            // unique recieved from server
 	uint8_t     srv_address[3];       // adress for the server
 	uint16_t    srv_port;             // port for the server
 } gm_Srv_t;

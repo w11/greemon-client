@@ -7,12 +7,13 @@
 #define HTTP_VERSION "0.1"
 #define HTTP_CONNECTION_MAX 5
 #define HTTP_PORT 80
-//#define HTTP_SEND_BUFFER 2048
-//#define HTTP_POST_BUFFER 1024
+#define HTTP_SEND_BUFFER 4096
+#define HTTP_POST_BUFFER 1024
 
 #include "espconn.h" // FOR WEBSERVER
 #include "mem.h"
 #include "myConfig.h"
+
 
 os_timer_t test_station_ip;
 
@@ -85,24 +86,21 @@ LOCAL uint8_t configPage[] = "<!DOCTYPE html>\
 <h2>Konfiguration</h2>\
 <form action=\"saveSettings.cgi\" method=\"POST\" accept-charset=\"UTF-8\">\
 <h3>Server Konfiguration</h3>\
-<label for=\"server-ip\">Server Adresse</label>\
-<input name=\"server-ip\" type=\"text\" id=\"server-ip\" maxlength=\"50\">\
+<label for=\"ip\">Server Adresse</label>\
+<input name=\"ip\" type=\"text\" id=\"ip\" maxlength=\"50\">\
 <br/>\
-<label for=\"server-port\">Server Port</label>\
-<input name=\"server-port\" type=\"text\" id=\"server-port\" maxlength=\"5\">\
+<label for=\"port\">Server Port</label>\
+<input name=\"port\" type=\"text\" id=\"port\" maxlength=\"5\">\
+<br/>\
+<label for=\"token\">Token</label>\
+<input name=\"token\" type=\"text\" id=\"token\" maxlength=\"32\">\
 <br/>\
 <h3>WLAN konfiguration</h3>\
-<label for=\"wlan-ssid\">SSID</label>\
-<input name=\"wlan-ssid\" type=\"text\" id=\"wlan-ssid\" maxlength=\"32\">\
+<label for=\"ssid\">SSID</label>\
+<input name=\"ssid\" type=\"text\" id=\"ssid\" maxlength=\"32\">\
 <br/>\
-<label for=\"wlan-password\">Passwort</label>\
-<input name=\"wlan-password\" type=\"password\" id=\"wlan-password\" maxlength=\"64\">\
-<br/>\
-<h3>Greemon Info</h3>\
-<label for=\"chipid\">Chip-ID</label>\
-<input name=\"chipid\" type=\"text\" id=\"chipid\" maxlength=\"32\">\
-<br/>\
-<hr/>\
+<label for=\"pass\">Passwort</label>\
+<input name=\"pass\" type=\"password\" id=\"pass\" maxlength=\"64\">\
 <button type=\"reset\">Zur&uuml;cksetzen</button>\
 <button type=\"submit\">Absenden</button>\
 <footer>\
@@ -239,7 +237,7 @@ uint16_t webserver_parse_post_content_length(char *pusrdata, unsigned short *pLe
 	uint16_t 	sp = 0; // start parsing
 	uint8_t 	noc = 0; // number of characters to copy
 	uint16_t 	content_length = 0;
-	char*	pLenTemp;	
+	char*		pLenTemp;	
 	uint16_t	post_length = *pLength;
 	uint16_t 	i = 0; 
 
@@ -299,20 +297,30 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 {
 	// These settings are going to be filled
 	gm_Base_t 	pBase_data;
-	gm_Srv_t		pSrv_data;
-	gm_APN_t		pAPN_data;
+	gm_Srv_t	pSrv_data;
+	gm_APN_t	pAPN_data;
 	uint16_t	post_length = *pLength;
 
-	char* pPost_content;
-	uint16_t clen = 0;
+	const char 	delimiter = '&';
+	uint32_t*	pKeyValuePair = NULL;
+	uint8_t 	countKeyValuePairs = 0;
+	uint16_t 	pos = 0;
+
+	char* 		pPost_content;
+	uint16_t 	clen = 0;
+
+
 
 	//DBG_OUT("POST-DATA");
 	//DBG_OUT(pusrdata);
 
 	clen = webserver_parse_post_content_length(pusrdata, pLength);
 	INFO("Content-Length (clen) = %u",clen);
+	if (0 == clen) return false; // TODO err code.
+
 
 	// 2 		Allocate Memory for x Size of Content Length
+	if (clen > HTTP_POST_BUFFER) return false; // TODO err code.
 	pPost_content = (char*)os_zalloc(sizeof(char) * clen+1);
 	if (NULL != pPost_content) {
 		// 4 		Copy Characters into allocated memory
@@ -321,12 +329,63 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 
 		DBG_OUT("Copied: %s", pPost_content);
 
-		os_free(pPost_content);
+		// Read Parameter and Values
+		// Count number of Key and Value pairs
+		pos = 0; // current char
+		while (pos < clen) {
+			if (delimiter == pPost_content[pos]) countKeyValuePairs++;
+			++pos;
+		}
+		DBG_OUT("Found %u Key-Pairs", countKeyValuePairs+1);
+
+		// Allocate pointer array
+		pKeyValuePair = (uint32_t*)os_malloc(sizeof(uint32_t)*countKeyValuePairs);
+		if (NULL == pKeyValuePair) return false; // TODO err code
+				
+		// now split the c string - means we change & to \0		
+		pos = 0;
+		countKeyValuePairs = 0;
+		pKeyValuePair[countKeyValuePairs++] = (uint32_t)pPost_content+pos; // first key-value-pair
+		while (pos < clen) {
+			if (delimiter == pPost_content[pos]) {
+				pPost_content[pos] = '\0';
+				// copy pointer to array.
+				pKeyValuePair[countKeyValuePairs] = (uint32_t)pPost_content+pos+1; 
+				countKeyValuePairs++;
+			}
+			pos++;
+		}		
+
+		// Find Server Configuration
+		for (pos = 0; pos < countKeyValuePairs; pos++){
+			// Output the string from the pointer of the array
+			DBG_OUT("KEYVALUE: %s", pKeyValuePair[pos] );
+			if (0 == os_strncmp(pKeyValuePair[pos],"ip=",2)) 
+				DBG_OUT("Found IP: %s",pKeyValuePair[pos]+2);
+			if (0 == os_strncmp(pKeyValuePair[pos],"ssid=",4)) 
+				DBG_OUT("Found ssid: %s",pKeyValuePair[pos]+4);
+			if (0 == os_strncmp(pKeyValuePair[pos],"token=",5)) 
+				DBG_OUT("Found token: %s",pKeyValuePair[pos]+5);
+			if (0 == os_strncmp(pKeyValuePair[pos],"pass=",4)) 
+				DBG_OUT("Found pass: %s",pKeyValuePair[pos]+4);;
+			if (0 == os_strncmp(pKeyValuePair[pos],"port=",4)) 
+				DBG_OUT("Found port: %s",pKeyValuePair[pos]+4);
+		}		
+
+		// Find APN Configuratoin
 		// 5 		Parse and save
+
+		// Free Heap
+		os_free(pPost_content);
+		os_free(pKeyValuePair);
+
 	} else {
 		return false; // TODO return Code	
 	}
-		return true;
+	
+	// Everything went ok
+	return true;		
+
 }
 
 
@@ -341,11 +400,10 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 LOCAL void ICACHE_FLASH_ATTR
 webserver_recv(void *arg, char *pusrdata, unsigned short length)
 {
-	struct espconn *clientConnectionPtr = arg;
-	uint8_t responseBuffer[4096]; //Because the StyleSheet is this large
+	struct espconn *pClient = arg;
+	uint8_t responseBuffer[HTTP_SEND_BUFFER]; //Because the StyleSheet is this large
 	uint16_t l=0;
 	uint8_t headerParser = 0;
-	char *parsedRequest = NULL;
 	bool validRequest = false;
 	uint16_t charstocopy = 0;
 	
@@ -400,15 +458,14 @@ Content-Length: %u\r\n\
 Connection: Keep-Alive\r\n\r\n\
 %s",ARRAY_SIZE(styleSheet)-1,styleSheet);
 			} else {
-				DBG_OUT("Not Implemented :(");
 				// FOR OTHERS: Error Code: 404 - Not found 	
+				DBG_OUT("Not Implemented :(");
 				l = os_sprintf(responseBuffer, httpNotFoundHeader); 
 			}
-
 		break;
 		case 'P': 
 			DBG_OUT("Parsing - Found POST");
-      webserver_parse_post_content(pusrdata,&length);
+      		webserver_parse_post_content(pusrdata,&length);
 			// !TODO: USE REAL DATA
 			//os_memcpy(apn_test.ssid, "EvoraIT\0", CONFIG_SIZE_SSID);
 			//os_memcpy(apn_test.pass, "Mobile\0", CONFIG_SIZE_PASS);
@@ -432,14 +489,14 @@ Connection: Keep-Alive\r\n\r\n\
 		break;
 	}
 
-	DBG_OUT("Starting response.");
-	if (0==espconn_sent(clientConnectionPtr, (uint8_t*)responseBuffer, l) ) {
+	INFO("Sending response...");
+	if (0==espconn_sent(pClient, (uint8_t*)responseBuffer, l) ) {
 		DBG_OUT("Response sent!");
 	} else {
 		DBG_OUT("Something went wrong :(");
 	}
 
-	espconn_disconnect(clientConnectionPtr);
+	espconn_disconnect(pClient);
 }
 
 
