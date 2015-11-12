@@ -23,37 +23,37 @@ config_print(config_t* config){
 #ifdef DEV_VERSION
   uint8_t i;
 	DBG_OUT("========= GREEMON ==========");
-  DBG_OUT("FLASH: \t%d Bytes", fs_size());
-  DBG_OUT("CONFIG: \t%d Bytes", sizeof(*config));
-  DBG_OUT("BUID-DATE: \t%s", &__GM_BUILD_DATE);
-  DBG_OUT("DEVICERID: \t%s", &__GM_BUILD_RAND_NUMBER);
-  DBG_OUT("======= CONFIG START =======");
-  DBG_OUT("ADDR: \t%x", config);
-  DBG_OUT("MAGC: \t%x", config->magic);
-  DBG_OUT("VERS: \t%d", config->version);
-  DBG_OUT("RAND: \t%d", config->random);
-  DBG_OUT("----------------------------");
-  DBG_OUT("SSID: \t%s", config->gm_apn_data.ssid);
-  DBG_OUT("PASS: \t%s", config->gm_apn_data.pass);
-  DBG_OUT("RSRV: \t%d.%d.%d.%d:%d", 
-      config->gm_auth_data.srv_address[0], 
-      config->gm_auth_data.srv_address[1], 
-      config->gm_auth_data.srv_address[2], 
-      config->gm_auth_data.srv_address[3],
-      config->gm_auth_data.srv_port );
-  DBG_OUT("======= CONFIG END =========");
-  DBG_OUT("====== SAVED VALUES ========");
-  for (i = 0; i<=config->storedData-1; i++){
-    DBG_OUT("TIME: \t%x", config->gm_data[i].timestamp );
-    DBG_OUT("MOIST:\t%d.%d", 
-        (uint8_t) ((0x0F & config->gm_data[i].dht22_moisture) >> 8), 
-        (uint8_t) (0xF0 & config->gm_data[i].dht22_moisture));
-    DBG_OUT("TEMP: \t%d.%d", 1,1);
-    DBG_OUT("LIGHT:\t%d.%d", 1,1);
-    DBG_OUT("ADC:  \t%d.%d", 1,1);
-    DBG_OUT("--------------------------")
-  }
-  DBG_OUT("======= END VALUES =========");
+  DBG_OUT("ADDR: \t%d Bytes", fs_size());
+  DBG_OUT("CONF: \t%d Bytes", sizeof(*config));
+  DBG_OUT("DATE: \t%s", &__GM_BUILD_DATE);
+  DBG_OUT("GMID: \t%s", &__GM_BUILD_RAND_NUMBER);
+	DBG_OUT("======= CONFIG START =======");
+	DBG_OUT("ADDR: \t%x", config);
+	DBG_OUT("MAGC: \t%x", config->magic);
+	DBG_OUT("VERS: \t%d", config->version);
+	DBG_OUT("RAND: \t%d", config->random);
+	DBG_OUT("----------------------------");
+	DBG_OUT("SSID: \t%s", config->gm_apn_data.ssid);
+	DBG_OUT("PASS: \t%s", config->gm_apn_data.pass);
+	DBG_OUT("RSRV: \t%d.%d.%d.%d:%d", 
+	    config->gm_auth_data.srv_address[0], 
+	    config->gm_auth_data.srv_address[1], 
+	    config->gm_auth_data.srv_address[2], 
+	    config->gm_auth_data.srv_address[3],
+	    config->gm_auth_data.srv_port );
+	DBG_OUT("======= CONFIG END =========");
+	DBG_OUT("====== SAVED VALUES ========");
+	for (i = 0; i<=config->storedData-1; i++){
+	  DBG_OUT("TIME: \t%x", config->gm_data[i].timestamp );
+	  DBG_OUT("MOIST:\t%d.%d", 
+	      (uint8_t) ((0x0F & config->gm_data[i].dht22_moisture) >> 8), 
+	      (uint8_t) (0xF0 & config->gm_data[i].dht22_moisture));
+	  DBG_OUT("TEMP: \t%d.%d", 1,1);
+	  DBG_OUT("LIGHT:\t%d.%d", 1,1);
+	  DBG_OUT("ADC:  \t%d.%d", 1,1);
+	  DBG_OUT("--------------------------");
+	}
+	DBG_OUT("======= END VALUES =========");
 #endif
 }
 
@@ -155,28 +155,32 @@ config_erase(void)
  * Parameters   : none
  * Returns      : config_error_t
  ********************************************************************************/
-  config_error_t ICACHE_FLASH_ATTR
+SpiFlashOpResult ICACHE_FLASH_ATTR
 config_save(config_t* unsaved_config)
 {
   unsaved_config->version = CONFIG_VERSION;
-  unsaved_config->magic = CONFIG_MAGIC;
+  // unsaved_config->magic = CONFIG_MAGIC;
   // Erase configuration sector
   if (SPI_FLASH_RESULT_OK == config_erase() ){
     // write new config in flash
     if (SPI_FLASH_RESULT_OK == config_write(unsaved_config)){
       DBG_OUT("wrote new configuration file to flash memory");
+			return SPI_FLASH_RESULT_OK;
       // TODO COMPARE NEW CONFIG WITHUNSAVED_CONFIG        
     } else {
       ERR_OUT("error writing to flash");
+			return SPI_FLASH_RESULT_ERR;
     }
   } else {
     ERR_OUT("could not erase config file sector in flash memory");
+		return SPI_FLASH_RESULT_ERR;
   }
 }
 
 
 bool ICACHE_FLASH_ATTR
 config_write_apn(gm_APN_t* apn){
+	bool success = false;
   config_t * old_config;
   old_config = (config_t*)os_zalloc(sizeof(config_t));
 
@@ -191,16 +195,19 @@ config_write_apn(gm_APN_t* apn){
   os_memcpy(old_config->gm_apn_data.ssid, apn->ssid, sizeof(apn->ssid));
   os_memcpy(old_config->gm_apn_data.pass, apn->pass, sizeof(apn->pass));   
 
-  if ( SPI_FLASH_RESULT_OK == config_save(old_config) )
-  {
-    return true;
+	old_config->magic = CONFIG_MAGIC;
+  if (SPI_FLASH_RESULT_OK == config_save(old_config)){
+    success = true;
   } else {
-    return false;
+    success = false;
   }
+    os_free(old_config);
+		return success;
 }
 
 bool ICACHE_FLASH_ATTR
 config_write_srv(gm_Srv_t* srv_data){
+	bool success = false;
   config_t * old_config;
   old_config = (config_t*)os_zalloc(sizeof(config_t));
 
@@ -211,25 +218,18 @@ config_write_srv(gm_Srv_t* srv_data){
 
   config_read(old_config);
 
-
-  old_config->gm_auth_data.srv_address[0] = srv_data->srv_address[0];
-  old_config->gm_auth_data.srv_address[1] = srv_data->srv_address[1];
-  old_config->gm_auth_data.srv_address[2] = srv_data->srv_address[2];
-  old_config->gm_auth_data.srv_address[3] = srv_data->srv_address[3];
-  old_config->gm_auth_data.srv_port = srv_data->srv_port;
-
-  //id token
-
   os_memcpy(old_config->gm_auth_data.id, srv_data->id, sizeof(srv_data->id));
   os_memcpy(old_config->gm_auth_data.token, srv_data->id, sizeof(srv_data->token));
 
+	old_config->magic = CONFIG_MAGIC;
+
   if (SPI_FLASH_RESULT_OK == config_save(old_config)){
-    os_free(old_config);
-    return true;
+    success = true;
   } else {
-    os_free(old_config);
-    return false;
+    success = false;
   }
+    os_free(old_config);
+		return success;
 }
 
 
@@ -282,7 +282,8 @@ config_init() {
   // Allocate memory on heap for the global configuration file
   pUser_global_cfg = (config_t*)os_zalloc(sizeof(config_t)); 
   if (NULL == pUser_global_cfg) {
-    ERR_OUT("allocation for config failed");
+    ERR_OUT("Allocation for config failed.");
+		ERR_OUT("Your Greemon is probably bricked.");
     return CONFIG_ALLOCATION_FAILED;
     // uh oh thats bad... what now?
   }
@@ -303,10 +304,24 @@ config_init() {
   } else {  
     // no valid config file. Saving new config.
     DBG_OUT("Config magic not found. Creating new configuration file");
-    pUser_global_cfg->magic = CONFIG_MAGIC;
+    pUser_global_cfg->magic = CONFIG_MAGIC_RESET;
     pUser_global_cfg->version = CONFIG_VERSION;
     pUser_global_cfg->storedData = 0;
+
+		DBG_OUT("Saving Random");
+		pUser_global_cfg->random = (uint32_t)__GM_BUILD_RAND_NUMBER;
+		DBG_OUT("Saving Default Name");
+		os_memcpy(pUser_global_cfg->gm_base_data.name,"GREEMON_DEFAULT",sizeof(pUser_global_cfg->gm_base_data.name));
+		DBG_OUT("Saving Deep Sleep Time");
+		pUser_global_cfg->gm_base_data.deep_sleep_us = 0;
+
+		DBG_OUT("Saving APN Data");
+		os_memcpy(pUser_global_cfg->gm_apn_data.ssid, CONFIG_STD_APNAME, sizeof(pUser_global_cfg->gm_apn_data.ssid));
+		os_memcpy(pUser_global_cfg->gm_apn_data.pass, CONFIG_STD_PASS, sizeof(pUser_global_cfg->gm_apn_data.pass));
+
+		DBG_OUT("Saving Config");
     config_save(pUser_global_cfg);  
+		config_print(pUser_global_cfg);
     return CONFIG_INITIAL;
   }
 

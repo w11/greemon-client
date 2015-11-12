@@ -296,28 +296,28 @@ bool ICACHE_FLASH_ATTR
 webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 {
 	// These settings are going to be filled
-	gm_Base_t 	pBase_data;
-	gm_Srv_t	pSrv_data;
-	gm_APN_t	pAPN_data;
+	gm_Base_t Base_data;
+	gm_Srv_t	Srv_data;
+	gm_APN_t	APN_data;
+	config_t	temp_config;
 	uint16_t	post_length = *pLength;
 
 	const char 	delimiter = '&';
 	uint32_t*	pKeyValuePair = NULL;
 	uint8_t 	countKeyValuePairs = 0;
 	uint16_t 	pos = 0;
+	uint16_t  temp_Port = 80;
+	uint8_t		i; // for splitting ip
 
 	char* 		pPost_content;
 	uint16_t 	clen = 0;
 
-
-
-	//DBG_OUT("POST-DATA");
+	INFO("RECIEVED CONFIGURATION DATA");
 	//DBG_OUT(pusrdata);
 
 	clen = webserver_parse_post_content_length(pusrdata, pLength);
 	INFO("Content-Length (clen) = %u",clen);
 	if (0 == clen) return false; // TODO err code.
-
 
 	// 2 		Allocate Memory for x Size of Content Length
 	if (clen > HTTP_POST_BUFFER) return false; // TODO err code.
@@ -359,21 +359,65 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 		// Find Server Configuration
 		for (pos = 0; pos < countKeyValuePairs; pos++){
 			// Output the string from the pointer of the array
-			DBG_OUT("KEYVALUE: %s", pKeyValuePair[pos] );
-			if (0 == os_strncmp(pKeyValuePair[pos],"ip=",2)) 
-				DBG_OUT("Found IP: %s",pKeyValuePair[pos]+2);
-			if (0 == os_strncmp(pKeyValuePair[pos],"ssid=",4)) 
-				DBG_OUT("Found ssid: %s",pKeyValuePair[pos]+4);
-			if (0 == os_strncmp(pKeyValuePair[pos],"token=",5)) 
-				DBG_OUT("Found token: %s",pKeyValuePair[pos]+5);
-			if (0 == os_strncmp(pKeyValuePair[pos],"pass=",4)) 
-				DBG_OUT("Found pass: %s",pKeyValuePair[pos]+4);;
-			if (0 == os_strncmp(pKeyValuePair[pos],"port=",4)) 
-				DBG_OUT("Found port: %s",pKeyValuePair[pos]+4);
+			// DBG_OUT("KEYVALUE: %s", pKeyValuePair[pos] );	
+			// parse content and map to config
+			if (0 == os_strncmp(pKeyValuePair[pos],"ip=",3)) {
+				DBG_OUT("Found IP: %s",pKeyValuePair[pos]+3);
+				//TODO SPLIT!	
+				DBG_OUT("saving fist octett");
+				Srv_data.srv_address[0] = 0;
+				DBG_OUT("saving second octett");
+				Srv_data.srv_address[1] = 1;
+				Srv_data.srv_address[2] = 2;
+				Srv_data.srv_address[3] = 3;
+				DBG_OUT("RSRV: \t%d.%d.%d.%d", 
+						Srv_data.srv_address[0], 
+						Srv_data.srv_address[1], 
+						Srv_data.srv_address[2], 
+						Srv_data.srv_address[3]);
+
+				if (0 == os_strncmp(pKeyValuePair[pos]+3,"http",4))
+				{
+					// HTTP Address. Not supported yet :(
+				}	else {
+					// Split the ip address 000.000.000.000
+
+				}
+			} else if (0 == os_strncmp(pKeyValuePair[pos],"ssid=",5)) {
+				DBG_OUT("Found ssid: %s",pKeyValuePair[pos]+5);
+				os_memcpy(APN_data.ssid,pKeyValuePair[pos]+5,CONFIG_SIZE_SSID);
+				DBG_OUT("Saved SSID: %s",APN_data.ssid);
+
+			} else if (0 == os_strncmp(pKeyValuePair[pos],"token=",6)) {
+				DBG_OUT("Found token: %s",pKeyValuePair[pos]+6);
+				os_memcpy(Srv_data.token,pKeyValuePair[pos]+6,CONFIG_SIZE_TKN);
+				DBG_OUT("Saved Token: %s",Srv_data.token);
+
+			} else if (0 == os_strncmp(pKeyValuePair[pos],"pass=",5)) {
+				DBG_OUT("Found pass: %s",pKeyValuePair[pos]+5);
+				os_memcpy(APN_data.pass,pKeyValuePair[pos]+5,CONFIG_SIZE_PASS);
+				DBG_OUT("Saved Pass: %s",APN_data.pass);
+
+			} else if (0 == os_strncmp(pKeyValuePair[pos],"port=",5)) {
+				DBG_OUT("Found port: %s",pKeyValuePair[pos]+5);
+				temp_Port = (uint16_t)atoi(pKeyValuePair[pos]+5);
+				DBG_OUT("Temp Port: %u",temp_Port);
+				Srv_data.srv_port = (uint16_t)temp_Port;
+				//os_memcpy(Srv_data.srv_port,temp_Port,sizeof(uint16_t));
+				DBG_OUT("Saved Port: %u",Srv_data.srv_port);
+			}
 		}		
 
-		// Find APN Configuratoin
 		// 5 		Parse and save
+		INFO("Trying to save into config");
+		if (config_write_apn(&APN_data)) {
+			DBG_OUT("...ok");
+		} else {
+			ERR_OUT("An error occured. Config not saved");
+		}
+
+		config_read(&temp_config);
+		config_print(&temp_config);
 
 		// Free Heap
 		os_free(pPost_content);

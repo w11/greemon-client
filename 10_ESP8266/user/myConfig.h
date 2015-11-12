@@ -19,7 +19,7 @@
 #define CONFIG_SIZE_TKN 32
 #define CONFIG_SIZE_PASS 32
 
-#define CONFIG_STD_APNAME "GREEMON"
+#define CONFIG_STD_APNAME "GREEMON_DEFAULT"
 #define CONFIG_STD_PASS ""
 
 #ifndef __GM_BUILD_RAND_NUMBER
@@ -68,8 +68,7 @@ typedef struct {
 typedef struct {
 	uint32_t  	magic;  		            // INITIAL: CONFIG_MAGIC_RESET
 	uint16_t 		version;                // version of the configuration file
-	uint16_t 		random;                 // Random number, used for validation
-	//uint32_t 		config_deep_sleep_time; // !0 = ENABLE DEEPSLEEP MODUS 
+	uint32_t 		random;                 // Random number, used for validation
 	uint8_t     storedData;             // number of stored values
 	gm_Base_t		gm_base_data;
 	gm_Srv_t    gm_auth_data;
@@ -87,7 +86,7 @@ void ICACHE_FLASH_ATTR config_print(config_t* config);
 SpiFlashOpResult ICACHE_FLASH_ATTR config_write(config_t* config);
 SpiFlashOpResult ICACHE_FLASH_ATTR config_read(config_t* config);
 SpiFlashOpResult ICACHE_FLASH_ATTR config_erase(void);
-config_error_t ICACHE_FLASH_ATTR config_save(config_t* unsaved_config);
+SpiFlashOpResult ICACHE_FLASH_ATTR config_save(config_t* unsaved_config);
 bool ICACHE_FLASH_ATTR config_write_apn(gm_APN_t* apn);
 bool ICACHE_FLASH_ATTR config_write_srv(gm_Srv_t* srv_data);
 bool ICACHE_FLASH_ATTR config_write_dataset(uint8_t len, gm_Data_t* data);

@@ -35,6 +35,8 @@
 #define BH1750_PIN_SDA 2
 #define BH1750_PIN_SCL 14
 
+#define DBG_USE_TESTCONFIG false
+
 LOCAL bool WifiScanComplete = false;
 LOCAL bool init_done = false;
 
@@ -58,13 +60,14 @@ void enable_reset_interrupt(void);
  * Returns      : none
 *******************************************************************************/
 void test_config(void) {
+	INFO("Generating Test-Configuration File");
 	config_t test_cfg;	
 	config_t loaded_cfg;
 
+#if DBG_USE_TESTCONFIG
   gm_Data_t test_data[3];
   gm_APN_t apn_data;
   gm_Srv_t srv_data;
-
 
   srv_data.srv_address[0] = 172;
   srv_data.srv_address[1] = 141;
@@ -105,14 +108,23 @@ void test_config(void) {
 	config_read(&loaded_cfg);
 	DBG_OUT("CFG:PRINT");
 	config_print(&loaded_cfg);	
+#endif
 
   config_init();
+	test_cfg.magic = CONFIG_MAGIC;	
+	test_cfg.version = CONFIG_VERSION;
+  test_cfg.random = 12345;
+  test_cfg.storedData = 0;
+	config_write(&test_cfg);
+
+#if DBG_USE_TESTCONFIG
   config_write_dataset(3,test_data);
   config_write_apn(&apn_data);
   config_write_srv(&srv_data);
+#endif
+
   config_read(&loaded_cfg);
   config_print(&loaded_cfg);
-  
 }
 
 
@@ -282,7 +294,7 @@ uint16_t earthprobe_adc_read(void) {
  * Returns      : 
 *******************************************************************************/
 void system_init_done(void){
-  config_t* cfg;
+  config_t configuration;
 
   //os_timer_setfn(&earthprobe_timer, earthprobe_adc_read, NULL);
 	//os_timer_arm(&earthprobe_timer, 2000, 1);
@@ -303,24 +315,25 @@ void system_init_done(void){
   //wifi_set_opmode(STATIONAP_MODE);
 	//wifi_station_ap_number_set(50); //200 aps scan max
 	
-
-	//DBG_OUT("=== CONFIG MANAGER TEST ===");	
-	//test_config();
-  
   switch (config_init())
   {
     case CONFIG_INITIAL:
-      DBG_OUT("INITIAL CONFIGURATION FILE");
+      INFO("INITIAL CONFIGURATION FILE");
+			//config_read(&configuration);
+			//config_print(&configuration);
+			//test_config();
     break;
     case CONFIG_MAGIC_FOUND:
-      DBG_OUT("CONFIGURATION DATA SUCCESSFULLY LOADED")
+      INFO("CONFIGURATION DATA SUCCESSFULLY LOADED")
+			config_read(&configuration);
+			config_print(&configuration);
     break;
   }
 
   INFO("=== GREEMON INITIALIZATION END ===");
   init_done = true;
 
-  test_config();
+	
   //DHT22_init();
 	//os_timer_setfn(&timerDHT, DHT_timerCallback, NULL);
 	//os_timer_arm(&timerDHT, 5000, 1);
