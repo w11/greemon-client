@@ -30,28 +30,35 @@
 
 #include "gpio.h"
 
-
+#define MEMLEAK_DEBUG
 
 #define BH1750_PIN_SDA 2
 #define BH1750_PIN_SCL 14
 
 #define DBG_USE_TESTCONFIG false
 
+typedef enum greemon_state {
+	_STATE_INITIAL = 0,
+	_STATE_STARTUP = 1,
+	_STATE_LOAD_CONFIG,
+	_STATE_START_WEBSERVER,
+	_STATE_WIFI_SCAN_RUNNING,
+	_STATE_WIFI_SCAN_FINISHED,
+	_STATE_RESTART,
+	_STATE_IN_ERROR
+} greemon_state_t;
+
 LOCAL bool WifiScanComplete = false;
 LOCAL bool init_done = false;
 
 LOCAL uint32_t COUNTER = 0;
 os_timer_t timerDHT;
-os_timer_t gpiotest_timer;
 os_timer_t i2ctest_timer;
 os_timer_t deepsleep_timer;
 os_timer_t earthprobe_timer;
 
 void intr_handle_cb(void);
 void enable_reset_interrupt(void);
-
-
-
 
 /******************************************************************************
  * FunctionName : test_config
@@ -77,7 +84,6 @@ void test_config(void) {
 
   os_memcpy(srv_data.id, "GMID213\0",sizeof(srv_data.token));
   os_memcpy(srv_data.token, "ABC-TOKEN\0",sizeof(srv_data.token));
-
 
   test_data[0].timestamp = 0xDEADBEEF;
   test_data[1].timestamp = 0xCAFEC0DE;
@@ -199,16 +205,6 @@ void deep_sleep_test_cb(void *pArg) {
 }
 
 /******************************************************************************
- * FunctionName : do_nothing
- * Description  : does nothing
- * Parameters   : nothing
- * Returns      : NOTHING I SAID!
-*******************************************************************************/
-void do_nothing(void){
-	//system_deep_sleep(10000000); // uint32_t time in us 
-}
-
-/******************************************************************************
  * FunctionName : wifi_scan_done
  * Description  : scan done callback
  * Parameters   :  arg: contain the aps information;
@@ -263,7 +259,6 @@ wifi_scan(void)
      return;
    }
    wifi_station_scan(NULL,wifi_scan_done);
-
 }
 
 
@@ -285,7 +280,7 @@ uint16_t earthprobe_adc_read(void) {
  * Parameters   : 
  * Returns      : 
 *******************************************************************************/
-//void user_rf_pre_init(void) { }
+void user_rf_pre_init(void) { }
 
 /******************************************************************************
  * FunctionName : 
@@ -294,46 +289,36 @@ uint16_t earthprobe_adc_read(void) {
  * Returns      : 
 *******************************************************************************/
 void system_init_done(void){
-  config_t configuration;
-
-  //os_timer_setfn(&earthprobe_timer, earthprobe_adc_read, NULL);
-	//os_timer_arm(&earthprobe_timer, 2000, 1);
-
-	//DBG_OUT("INIT: DHT22 initialization");
 	
-	INFO("=== GREEMON INITIALIZATION START ===");
+	INFO("system starting up");
 	system_get_flash_size_map();
 
 	// Register interrupt handler
-	DBG_OUT("INIT: Register interrupt handler");
 	ETS_GPIO_INTR_ATTACH(intr_handle_cb, NULL);
 	enable_reset_interrupt();
-	
-
-  //Set softAP + station mode
-	//DBG_OUT("INIT: Set WiFi Operation Mode: STATION+AP");
-  //wifi_set_opmode(STATIONAP_MODE);
-	//wifi_station_ap_number_set(50); //200 aps scan max
 	
   switch (config_init())
   {
     case CONFIG_INITIAL:
-      INFO("INITIAL CONFIGURATION FILE");
-			//config_read(&configuration);
-			//config_print(&configuration);
-			//test_config();
+      INFO("generated initial configuration");
+			INFO("loading default ap settings");
+			user_set_softap_config();
+			DBG_OUT("starting webserver");
+			webserver_init(HTTP_PORT);
     break;
     case CONFIG_MAGIC_FOUND:
-      INFO("CONFIGURATION DATA SUCCESSFULLY LOADED")
-			config_read(&configuration);
-			config_print(&configuration);
+      INFO("configuration loaded");
+			// search for ap name in config
+			// connect if found
+			// else try again after a few seconds
+			// startup webconfig if not connected
+			INFO("scanning available access points");
+			wifi_station_ap_number_set(20);
+			//wifi scan has to after system init done.
+			wifi_scan();
     break;
   }
-
-  INFO("=== GREEMON INITIALIZATION END ===");
-  init_done = true;
-
-	
+	init_done = true;
   //DHT22_init();
 	//os_timer_setfn(&timerDHT, DHT_timerCallback, NULL);
 	//os_timer_arm(&timerDHT, 5000, 1);
@@ -341,12 +326,6 @@ void system_init_done(void){
 	//DBG_OUT("INIT: BH1750 initialization");
 	//os_timer_setfn(&i2ctest_timer, i2ctest, NULL);
 	//os_timer_arm(&i2ctest_timer, 20000, 1);
-
-
-  //DBG_OUT("INIT: Scan available access points ===");
-  //wifi_station_ap_number_set(20);
-  // wifi scan has to after system init done.
-  //system_init_done_cb(wifi_scan);
 }
 
 /******************************************************************************
@@ -371,7 +350,7 @@ void wifi_ipv4_setDefault(void){
 
 
 /******************************************************************************
- * FunctionName : 
+ * FunctionName : wifi_handle_event_cb
  * Description  : 
  * Parameters   : 
  * Returns      : 
@@ -441,15 +420,15 @@ user_set_softap_config(void)
    //TODO: LOAD Config from Flash Memory. 
    os_memset(config.ssid, 0, 32);
    os_memset(config.password, 0, 64);
-   os_memcpy(config.ssid, "Greemon", 7);
+   os_memcpy(config.ssid, "Greemon_default", 15);
    os_memcpy(config.password, "", 0);
    config.authmode = AUTH_OPEN;
    config.ssid_len = 0;		// or its actual length
    config.max_connection = HTTP_CONNECTION_MAX; // how many stations can connect to ESP8266 softAP at most.
 
-   wifi_softap_set_config(&config);// Set ESP8266 softap config .
+   	wifi_softap_set_config(&config);// Set ESP8266 softap config .
    
-	wifi_ipv4_setDefault();
+		wifi_ipv4_setDefault();
 }
 
 /*****************************************************************************
@@ -464,7 +443,7 @@ void intr_handle_cb(void){
 	uint8_t i = 0;
 
 	// Save current value for status register
-	uint32_t gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);	
+	volatile uint32_t gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);	
 
 	//Disable Interrup
   ETS_GPIO_INTR_DISABLE();
@@ -481,10 +460,6 @@ void intr_handle_cb(void){
 
   // Reenable interrupt
   ETS_GPIO_INTR_ENABLE();
-
-
-  //system_restart(); // this does not work :( ?
-
 }
 
 /******************************************************************************
@@ -494,7 +469,6 @@ void intr_handle_cb(void){
  * Returns      : none
 *******************************************************************************/
 void enable_reset_interrupt(){
-	
 	ETS_GPIO_INTR_DISABLE();
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);
     	gpio_output_set(0, 0, 0, GPIO_ID_PIN(0));
@@ -508,10 +482,8 @@ void enable_reset_interrupt(){
     	//enable interrupt
     	gpio_pin_intr_state_set(GPIO_ID_PIN(0), GPIO_PIN_INTR_NEGEDGE);
     	ETS_GPIO_INTR_ENABLE();
-
+	INFO("interrupt enabled");
 }
-
-
 
 /******************************************************************************
  * FunctionName : user_init
@@ -521,55 +493,9 @@ void enable_reset_interrupt(){
 *******************************************************************************/
 void user_init(void) {
 	system_init_done_cb(system_init_done);
+	wifi_station_set_auto_connect(false);
 	uart_init(BIT_RATE_115200, BIT_RATE_115200);
 	wifi_set_event_handler_cb(wifi_handle_event_cb);
-	user_set_softap_config();
-	wifi_station_set_auto_connect(false);
-	
-	os_delay_us(1000);
-
-	DBG_OUT("INIT: Webserver initialization");
-	webserver_init(HTTP_PORT);
-/*
-	DBG_OUT("=== MEMORY INFO ===");
-	system_print_meminfo();	
-	DBG_OUT("Free Heap: %u",system_get_free_heap_size());
-*/
-
+	INFO("waiting for wifi to start..")
 } // End of user_init
 
-
-/*
-* OLD IMPLEMENTATIONS
-*
-
-void user_init(void) {
-	uart_init(BIT_RATE_115200, BIT_RATE_115200);
-	wifi_station_set_auto_connect(false);
-
-    //Set softAP + station mode
-    wifi_set_opmode(STATIONAP_MODE);
-	wifi_station_ap_number_set(200);
-    // wifi scan has to after system init done.
-    system_init_done_cb(wifi_scan);
-
-	os_printf("\r\n---HELLO---\r\n");	
-	system_print_meminfo();	
-	system_get_flash_size_map();
-	COUNTER++;
-	os_printf("\r\nCOUNTER: %d\r\n", COUNTER);
-	//DHT22_init();
-
-	//os_timer_setfn(&myTimer, DHT_timerCallback, NULL);
-	//os_timer_arm(&myTimer, 2000, 1);
-
-	//os_timer_setfn(&i2ctest_timer, i2ctest, NULL);
-	//os_timer_arm(&i2ctest_timer, 2000, 1);
-    
-	//os_timer_setfn(&deepsleep_timer, deep_sleep_test_cb, NULL);
-	//os_timer_arm(&deepsleep_timer, 2000, 1);
-
-	do_nothing();
-	
-} 
-*/

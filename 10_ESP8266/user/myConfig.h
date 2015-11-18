@@ -1,14 +1,11 @@
 #ifndef __MY_CONFIG_H__
 #define __MY_CONFIG_H__
 
-
-
 /* NOTICE !!! ---this is for 512KB spi flash.*/
 /* You can change to other sector if you use other size spi flash. */
 /* Refer to the documentation about OTA support and flash mapping*/
-#define CONFIG_SECTOR_START 0x3C
+#define CONFIG_SECTOR_START 0x3E
 #define CONFIG_ADDRESS_START (SPI_FLASH_SEC_SIZE * CONFIG_SECTOR_START)
-
 
 #define CONFIG_MAX_CHAR 64
 #define CONFIG_MAGIC 0xCAFEC0DE
@@ -39,17 +36,17 @@ typedef enum config_error_t {
 } config_error_t;
 
 typedef struct {
-	uint32_t  timestamp;          // timestamp
-	int16_t   dht22_moisture;     // DHT22
-	uint16_t  dht22_temperature;  // DHT22
-	uint16_t  bh1750_light;       // BH1750
-	uint16_t  adc_moisture;       // ADC
+	uint32_t  	timestamp;          // timestamp
+	int16_t   	dht22_moisture;     // DHT22
+	uint16_t  	dht22_temperature;  // DHT22
+	uint16_t  	bh1750_light;       // BH1750
+	uint16_t  	adc_moisture;       // ADC
 } gm_Data_t;
 // 96 Bytes
 
 typedef struct {
-	char     	id[32];               // unique recieved from server
-	char     	token[CONFIG_SIZE_TKN];            // unique recieved from server
+	char     		id[32];               // unique recieved from server
+	char     		token[CONFIG_SIZE_TKN];            // unique recieved from server
 	uint8_t     srv_address[3];       // adress for the server
 	uint16_t    srv_port;             // port for the server
 } gm_Srv_t;
@@ -61,8 +58,8 @@ typedef struct {
 
 typedef struct {
 	// CLIENT IDENTIFIER
-	uint8_t name[32];								// name of the device
-	uint32_t deep_sleep_us;					// in us		
+	uint8_t 		name[32];								// name of the device
+	uint32_t 		deep_sleep_us;					// in us		
 } gm_Base_t;
 
 typedef struct {
@@ -77,11 +74,8 @@ typedef struct {
 } config_t;
 // 208 bytes + 96*CONFIG_MAX_DATASETS + gm_Auth_t
 
+config_t global_cfg;
 
-LOCAL config_t* pUser_global_cfg;
-
-
-size_t fs_size();
 void ICACHE_FLASH_ATTR config_print(config_t* config);
 SpiFlashOpResult ICACHE_FLASH_ATTR config_write(config_t* config);
 SpiFlashOpResult ICACHE_FLASH_ATTR config_read(config_t* config);

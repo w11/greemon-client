@@ -5,19 +5,15 @@
 
 
 #define HTTP_VERSION "0.1"
-#define HTTP_CONNECTION_MAX 5
+#define HTTP_CONNECTION_MAX 2
 #define HTTP_PORT 80
 #define HTTP_SEND_BUFFER 4096
 #define HTTP_POST_BUFFER 1024
+#define HTTP_RECV_BUFFER 1024
 
 #include "espconn.h" // FOR WEBSERVER
 #include "mem.h"
 #include "myConfig.h"
-
-
-os_timer_t test_station_ip;
-
-LOCAL uint16_t requestNum = 0;
 
 LOCAL uint8_t indexPage[] = "<html>\
 <head>\
@@ -115,23 +111,6 @@ LOCAL uint8_t styleSheet[] = "\
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td,article,aside,audio,canvas,details,figcaption,figure,footer,header,hgroup,mark,menu,meter,nav,output,progress,section,summary,time,video{border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent;margin:0;padding:0;}body{line-height:1;}article,aside,dialog,figure,footer,header,hgroup,nav,section,blockquote{display:block;}nav ul{list-style:none;}ol{list-style:decimal;}ul{list-style:disc;}ul ul{list-style:circle;}blockquote,q{quotes:none;}blockquote:before,blockquote:after,q:before,q:after{content:none;}ins{text-decoration:underline;}del{text-decoration:line-through;}mark{background:none;}abbr[title],dfn[title]{border-bottom:1px dotted #000;cursor:help;}table{border-collapse:collapse;border-spacing:0;}hr{display:block;height:1px;border:0;border-top:1px solid #ccc;margin:1em 0;padding:0;}input[type=submit],input[type=button],button{margin:0!important;padding:0!important;}input,select,a img{vertical-align:middle;}\
 body{ font-family: Helvetica, sans-serif; color: #222; }";
 
-
-#ifndef ARRAY_SIZE
-# define ARRAY_SIZE(a) (uint16_t*)(sizeof(a) / sizeof((a)[0]))
-#endif
-
-
-typedef struct _HTTPConnection{
-	struct espconn *conn;
-//	uint8_t connectionID;
-//  char requestType;
-//	uint8_t 	*sBuf;
-//	uint16_t  	sBufLen;
-} HTTPConnection_t;
-
-static HTTPConnection_t HTTPConnection[HTTP_CONNECTION_MAX]; // Initializes a connection pool.
-
-
 static const uint8_t *httpNotFoundHeader = "HTTP/1.0 404 Not Found\r\n\
 Server: greemon-httpd/"HTTP_VERSION"\r\n\
 Connection: close\r\n\
@@ -145,13 +124,28 @@ Content-Type: text/plain\r\n\
 Content-Length: 28\r\n\r\n\
 Not Implemented, sorry :(.\r\n";
 
+#ifndef ARRAY_SIZE
+# define ARRAY_SIZE(a) (uint16_t*)(sizeof(a) / sizeof((a)[0]))
+#endif
 
+typedef struct _HTTPConnection{
+	struct espconn *conn;
+  uint8_t id;
+//  char requestType;
+//	uint8_t 	*sBuf;
+//	uint16_t  	sBufLen;
+} HTTPConnection_t;
 
-
+LOCAL HTTPConnection_t client[HTTP_CONNECTION_MAX]; // connection pool
+LOCAL struct espconn webserver_conn;												// server structure
+LOCAL esp_tcp webserver_tcp;																// tcp structure for the server
+LOCAL os_timer_t test_station_ip;
 
 /******************************************************************************
  * FunctionName : user_esp_platform_check_ip
- * Description  : check whether get ip addr or not
+ * Description  : check whether get ip addr or not. 
+ *								Function is called by timer test_station_ip.
+ *								Timer is startet by user_set_station_config.
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
@@ -190,16 +184,12 @@ user_esp_platform_check_ip(void)
 void ICACHE_FLASH_ATTR
 user_set_station_config(gm_APN_t* apn)
 {
-	DBG_OUT("WIFISERVER: Set Station Config")
+	info("connect to access point");
 	wifi_station_disconnect();
 
 	// save to config
 	config_write_apn(apn);
 
-	// load this configuration to the esp
-  //char ssid[32] = "osiris";
-  //char password[64] = "scheka123";
-  
 	// Create the struc the esp needs
 	struct station_config stationConf;
   // need not mac address
@@ -221,7 +211,6 @@ user_set_station_config(gm_APN_t* apn)
    os_timer_disarm(&test_station_ip);
    os_timer_setfn(&test_station_ip, (os_timer_func_t *)user_esp_platform_check_ip, NULL);
    os_timer_arm(&test_station_ip, 100, 0);
-
 }
 
 
@@ -237,16 +226,15 @@ uint16_t webserver_parse_post_content_length(char *pusrdata, unsigned short *pLe
 	uint16_t 	sp = 0; // start parsing
 	uint8_t 	noc = 0; // number of characters to copy
 	uint16_t 	content_length = 0;
-	char*		pLenTemp;	
+	char*			pLenTemp;	
 	uint16_t	post_length = *pLength;
 	uint16_t 	i = 0; 
-
+	INFO("reading content length");
 
 	// FIND CONTENT LENGTH
 	while ( i < post_length )
  	{
 		if (0 == os_strncmp(pusrdata+i,"Content-Length", 14 )) {
-			INFO("Found Content-Length");
 			sp = i+16; // skip "Content-Length: "
 			noc = 0;
 			// Find \r\n
@@ -273,15 +261,14 @@ uint16_t webserver_parse_post_content_length(char *pusrdata, unsigned short *pLe
 	// found \r\n after value of noc characters
 	pLenTemp = (char*)os_zalloc(sizeof(char) * noc+1);
 	if (NULL == pLenTemp) return false; // TODO return Code
-	DBG_OUT("number of chars: %d", noc);
+	//DBG_OUT("number of chars: %d", noc);
 	os_memcpy(pLenTemp,pusrdata+sp,noc);
 	pLenTemp[noc] = '\0'; // add termination
-	DBG_OUT("pLenTemp: %s", pLenTemp);
+	//DBG_OUT("pLenTemp: %s", pLenTemp);
 	content_length = atoi(pLenTemp);
-	DBG_OUT("length: %u",content_length);
+	//DBG_OUT("length: %u",content_length);
 
 	os_free(pLenTemp);
-
 	return content_length;
 }
 
@@ -299,7 +286,7 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 	gm_Base_t Base_data;
 	gm_Srv_t	Srv_data;
 	gm_APN_t	APN_data;
-	config_t	temp_config;
+
 	uint16_t	post_length = *pLength;
 
 	const char 	delimiter = '&';
@@ -312,11 +299,11 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 	char* 		pPost_content;
 	uint16_t 	clen = 0;
 
-	INFO("RECIEVED CONFIGURATION DATA");
+	INFO("start parsing");
 	//DBG_OUT(pusrdata);
 
 	clen = webserver_parse_post_content_length(pusrdata, pLength);
-	INFO("Content-Length (clen) = %u",clen);
+	INFO("content-length: %u",clen);
 	if (0 == clen) return false; // TODO err code.
 
 	// 2 		Allocate Memory for x Size of Content Length
@@ -327,7 +314,7 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 		os_memcpy(pPost_content,pusrdata+post_length-clen,clen);
 		pPost_content[clen] = '\0'; // add termination
 
-		DBG_OUT("Copied: %s", pPost_content);
+		INFO("content: %s", pPost_content);
 
 		// Read Parameter and Values
 		// Count number of Key and Value pairs
@@ -336,7 +323,7 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 			if (delimiter == pPost_content[pos]) countKeyValuePairs++;
 			++pos;
 		}
-		DBG_OUT("Found %u Key-Pairs", countKeyValuePairs+1);
+		//DBG_OUT("found %u Key-Pairs", countKeyValuePairs+1);
 
 		// Allocate pointer array
 		pKeyValuePair = (uint32_t*)os_malloc(sizeof(uint32_t)*countKeyValuePairs);
@@ -408,16 +395,15 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 			}
 		}		
 
+		DBG_OUT("APN Data ADDR: %x",&APN_data);
+
 		// 5 		Parse and save
-		INFO("Trying to save into config");
+		DBG_OUT("Trying to save into config");
 		if (config_write_apn(&APN_data)) {
-			DBG_OUT("...ok");
+			INFO("success");
 		} else {
 			ERR_OUT("An error occured. Config not saved");
 		}
-
-		config_read(&temp_config);
-		config_print(&temp_config);
 
 		// Free Heap
 		os_free(pPost_content);
@@ -450,7 +436,7 @@ webserver_recv(void *arg, char *pusrdata, unsigned short length)
 	uint8_t headerParser = 0;
 	bool validRequest = false;
 	uint16_t charstocopy = 0;
-	
+
 	//TODO REMOVE TEST DATA
 	gm_APN_t apn_test;
 
@@ -509,15 +495,11 @@ Connection: Keep-Alive\r\n\r\n\
 		break;
 		case 'P': 
 			DBG_OUT("Parsing - Found POST");
-      		webserver_parse_post_content(pusrdata,&length);
-			// !TODO: USE REAL DATA
-			//os_memcpy(apn_test.ssid, "EvoraIT\0", CONFIG_SIZE_SSID);
-			//os_memcpy(apn_test.pass, "Mobile\0", CONFIG_SIZE_PASS);
-			//user_set_station_config(&apn_test);
-
-			// Save Server and Port
-
-// Insert the contents
+      if (true == webserver_parse_post_content(pusrdata,&length))
+			{
+				INFO("restarting controller with saved configuration");			
+			}
+// Insert the contents of the saving Page
 			l = os_sprintf(responseBuffer, 
 "HTTP/1.1 200 OK\r\n\
 Content-Type: text/html\r\n\
@@ -534,7 +516,8 @@ Connection: Keep-Alive\r\n\r\n\
 	}
 
 	INFO("Sending response...");
-	if (0==espconn_sent(pClient, (uint8_t*)responseBuffer, l) ) {
+	//INFO("free heap: %u Bytes",system_get_free_heap_size());
+	if (0==espconn_sent((struct espconn*)arg, (uint8_t*)responseBuffer, l) ) {
 		DBG_OUT("Response sent!");
 	} else {
 		DBG_OUT("Something went wrong :(");
@@ -555,26 +538,26 @@ webserver_print_clients(){
 #ifdef WEBSRV_DEBUG_PRINT_CLIENTS
 	DBG_OUT("=== CONNECTION POOL STATUS ===");	
 	uint8_t i = 0;
-	for (i=0; i<HTTP_CONNECTION_MAX; i++) {
-		if (NULL == HTTPConnection[i].conn) {
-			//HTTPConnection[i].conn->link_cnt
+	for (i=0; i < HTTP_CONNECTION_MAX; i++) {
+		if (NULL == client[i].conn) {
 			DBG_OUT(">> SLOT:%u\tSTATUS:FREE\t",i);
 		} else {
 			// Slot is reserved, but no active tcp connection
-			if (NULL == HTTPConnection[i].conn->proto.tcp) {
+			if (NULL == client[i].conn->proto.tcp) {
 				DBG_OUT(">> SLOT:%u\tSTATUS:%u\tLINK_CNT:%u\tPORT:NULL",
-						i,HTTPConnection[i].conn->state,HTTPConnection[i].conn->link_cnt);
+						i,client[i].conn->state,client[i].conn->link_cnt);
 			} else {
 			// Slot is reserved and has active tcp connection
 				DBG_OUT(">> SLOT:%u\tSTATUS:%u\tLINK_CNT:%u\tPORT:%d",
 						i,
-						HTTPConnection[i].conn->state,
-						HTTPConnection[i].conn->link_cnt,
-						HTTPConnection[i].conn->proto.tcp->remote_port);		
+						client[i].conn->state,
+						client[i].conn->link_cnt,
+						client[i].conn->proto.tcp->remote_port);		
 			}	
 		}
 	}
 #endif
+
 }
 
 
@@ -589,13 +572,14 @@ void webserver_recon(void *arg, sint8 err)
 {
     struct espconn *pesp_conn = arg;
 
-    DBG_OUT(">>Client %d.%d.%d.%d:%d Error: %d reconnected\n", 
+    INFO("client %d.%d.%d.%d:%d reconnected", 
 			pesp_conn->proto.tcp->remote_ip[0],
     	pesp_conn->proto.tcp->remote_ip[1],
 			pesp_conn->proto.tcp->remote_ip[2],
     	pesp_conn->proto.tcp->remote_ip[3],
-			pesp_conn->proto.tcp->remote_port, 
-			err);
+			pesp_conn->proto.tcp->remote_port
+		);
+		DBG_OUT("with error code: %u", err);
 }
 
 /******************************************************************************
@@ -607,24 +591,23 @@ void webserver_recon(void *arg, sint8 err)
 LOCAL ICACHE_FLASH_ATTR
 void webserver_discon(void *arg)
 {
-	bool foundClient = false;
-	uint8_t i = 0;
-    struct espconn *disconnect_conn = arg;
+	volatile bool foundClient = false;
+	volatile uint8_t i = 0;
+  struct espconn* disconnect_conn = arg;
 
-    DBG_OUT(">>Client %d.%d.%d.%d:%d disconnected. LINK_CNT=%u Removing from client-pool.", 
-				disconnect_conn->proto.tcp->remote_ip[0],
-        		disconnect_conn->proto.tcp->remote_ip[1],
-				disconnect_conn->proto.tcp->remote_ip[2],
-        		disconnect_conn->proto.tcp->remote_ip[3],
-				disconnect_conn->proto.tcp->remote_port,
-				disconnect_conn->link_cnt);
+  INFO("client %d.%d.%d.%d:%d disconnected", 
+			disconnect_conn->proto.tcp->remote_ip[0],
+      disconnect_conn->proto.tcp->remote_ip[1],
+			disconnect_conn->proto.tcp->remote_ip[2],
+      disconnect_conn->proto.tcp->remote_ip[3],
+			disconnect_conn->proto.tcp->remote_port
+	);
 
 	for (i=0; i<HTTP_CONNECTION_MAX; i++) { 
-		DBG_OUT("SEARCHING SLOT: %u, LINK_CNT: %u",i,HTTPConnection[i].conn->link_cnt);
-		if ( HTTPConnection[i].conn->link_cnt == disconnect_conn->link_cnt ) {
+		if ( client[i].conn->link_cnt == disconnect_conn->link_cnt ) {
 			foundClient = true;
-			DBG_OUT(">>Connection %u has been removed from the pool. Pool's closed ;)",i);
-			HTTPConnection[i].conn = NULL;
+			client[i].conn = NULL;
+			INFO("slot %u cleared",i);			
 			break;
 		} 
 	}
@@ -645,11 +628,11 @@ void webserver_discon(void *arg)
 LOCAL void ICACHE_FLASH_ATTR
 webserver_regist_connect(void *arg)
 {
-	bool foundFreeSlot = false;
-    struct espconn *listening_conn = arg;
-	uint8_t i = 0;
+	volatile bool foundFreeSlot = false;
+	volatile uint8_t i = 0;
+  struct espconn *listening_conn = arg;
 
-	INFO(">> Client %d.%d.%d.%d:%d connected\n", 
+	INFO("client %d.%d.%d.%d:%d connected", 
 				listening_conn->proto.tcp->remote_ip[0],
         listening_conn->proto.tcp->remote_ip[1],
 				listening_conn->proto.tcp->remote_ip[2],
@@ -658,9 +641,9 @@ webserver_regist_connect(void *arg)
 
 	// Search for a free slot to handle incoming connection
 	for (i=0; i<HTTP_CONNECTION_MAX; i++) {
-		if (NULL == HTTPConnection[i].conn) {
+		if (NULL == client[i].conn) {
 			// Found a free slot to handle the client
-			DBG_OUT(">> Register Client at Slot %u", i);
+			INFO("registered at slot: %u", i);
 			foundFreeSlot = true;
 			break; // no need to look for other free slots
 		}
@@ -670,17 +653,25 @@ webserver_regist_connect(void *arg)
 	{
 		//TODO ALLOCATE MEMORY FOR SENDING BUFFER
 				
-		
 		// Register Connection in Pool
-		HTTPConnection[i].conn = listening_conn;
-		// Register Callbacks
-		DBG_OUT("INIT: Register TCP Callbacks for client");
+		client[i].conn = listening_conn; // save connection-ptr
+ 		client[i].id = i;
+		
+/*
 		espconn_regist_recvcb(listening_conn, webserver_recv);
 		espconn_regist_reconcb(listening_conn, webserver_recon);
 		espconn_regist_disconcb(listening_conn, webserver_discon);
+*/
+// TODO CHECK BECAUSE EXPERIMENTAL
+//	We register the callback for the specific connection.
+		espconn_regist_recvcb(client[i].conn, webserver_recv);
+		espconn_regist_reconcb(client[i].conn, webserver_recon);
+		espconn_regist_disconcb(client[i].conn, webserver_discon);
+		INFO("registered callbacks");
+
 		//TODO: REGISTER espconn_regist_sentcb();
 	} else {
-		ERR_OUT("INIT: No free tcp-slot avaiable");
+		ERR_OUT("(!) error. No free slot available.");
 		//TODO SEND BUSY HEADER
 	}
 	webserver_print_clients();
@@ -693,19 +684,12 @@ webserver_regist_connect(void *arg)
  * Returns      : Status/Error Code
 *******************************************************************************/
 uint8_t webserver_init(uint32_t port) {
+
 	uint8_t i = 0;
-
-  LOCAL struct espconn webserver_conn;
-  LOCAL esp_tcp webserver_tcp;
-
-	//INFO();
-	DBG_OUT("--- Initializing Webserver ---");
+	INFO("initializing webserver");
 
 	// Reset Webserver Client Pool
-	for (i=0; i<HTTP_CONNECTION_MAX; i++) {
-		DBG_OUT("INIT: Reset HTTPConnection[%u] = NULL", i);
-		HTTPConnection[i].conn = NULL;
-	}
+	for (i=0; i<HTTP_CONNECTION_MAX; i++) client[i].conn = NULL;
 
 	// Init Webserver TCP Listening Configuration
   webserver_conn.type = ESPCONN_TCP;
@@ -713,27 +697,21 @@ uint8_t webserver_init(uint32_t port) {
   webserver_conn.proto.tcp = &webserver_tcp;
   webserver_conn.proto.tcp->local_port = port;
 
-	//This timeout interval is not very precise, only as reference.
-	//If timeout is set to 0, timeout will be disable and ESP8266 TCP server will
-	//not disconnect TCP clients has stopped communication. This usage of
-	//timeout=0, is deprecated.
-	espconn_regist_time(&webserver_conn, 10000, 0);
+
 
 	//Set the maximum number of TCP clients allowed to connect to ESP8266 TCP Server.
 	espconn_tcp_set_max_con_allow(&webserver_conn, HTTP_CONNECTION_MAX);
 
 	// Register Callback function for connection clients at tcp server
-	DBG_OUT("INIT: Register Callback for incoming clients. Addr: %p", &webserver_conn);
 	espconn_regist_connectcb(&webserver_conn, webserver_regist_connect);
 
-	DBG_OUT("INIT: Starting TCP Server");
+	INFO("starting server");
 	switch (espconn_accept(&webserver_conn))
 	{
 		case ESPCONN_OK:
-			DBG_OUT("INIT: Webserver listening at Port %u", port);
-			DBG_OUT("Free Heap: %u",system_get_free_heap_size());
-			//DBG_OUT("=== MEMINFO ===");
-			//system_print_meminfo();	
+			//timeout=0, is deprecated. (seconds)
+			espconn_regist_time(&webserver_conn, 120, 0);
+			INFO("listening at port %u", port);
 			return ESPCONN_OK;
 		break;
 		case ESPCONN_MEM:
@@ -745,7 +723,7 @@ uint8_t webserver_init(uint32_t port) {
 			return ESPCONN_ARG;
 		break;
 		case ESPCONN_ISCONN:
-			ERR_OUT("Error - Eebserver is already connected");
+			ERR_OUT("Error - Webserver is already running");
 			return ESPCONN_ISCONN;
 		break;
 	}
