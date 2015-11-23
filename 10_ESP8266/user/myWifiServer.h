@@ -400,7 +400,7 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 		// 5 		Parse and save
 		DBG_OUT("Trying to save into config");
 		if (config_write_apn(&APN_data)) {
-			INFO("success");
+			INFO("write apn success");
 		} else {
 			ERR_OUT("An error occured. Config not saved");
 		}
@@ -414,6 +414,7 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 	}
 	
 	// Everything went ok
+	INFO("parsing success");
 	return true;		
 
 }
@@ -497,7 +498,7 @@ Connection: Keep-Alive\r\n\r\n\
 			DBG_OUT("Parsing - Found POST");
       if (true == webserver_parse_post_content(pusrdata,&length))
 			{
-				INFO("restarting controller with saved configuration");			
+				INFO("todo: restarting controller with saved configuration");			
 			}
 // Insert the contents of the saving Page
 			l = os_sprintf(responseBuffer, 
@@ -515,12 +516,17 @@ Connection: Keep-Alive\r\n\r\n\
 		break;
 	}
 
-	INFO("Sending response...");
-	//INFO("free heap: %u Bytes",system_get_free_heap_size());
-	if (0==espconn_sent((struct espconn*)arg, (uint8_t*)responseBuffer, l) ) {
-		DBG_OUT("Response sent!");
+
+	if ((0 != l) || (NULL != responseBuffer)) { // Check if theres something in the buffer to send.
+		INFO("Sending response...");
+		//INFO("free heap: %u Bytes",system_get_free_heap_size());
+		if (0==espconn_sent((struct espconn*)arg, (uint8_t*)responseBuffer, l) ) {
+			DBG_OUT("Response sent!");
+		} else {
+			DBG_OUT("Something went wrong :(");
+		}
 	} else {
-		DBG_OUT("Something went wrong :(");
+		INFO("empty transmit buffer");
 	}
 
 	espconn_disconnect(pClient);

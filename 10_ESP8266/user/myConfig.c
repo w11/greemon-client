@@ -6,6 +6,10 @@
 #include "myConfig.h"
 
 
+uint16_t getConfigSize(void){
+	return sizeof(config_t);
+}
+
 /******************************************************************************
  * FunctionName : config_print
  * Description  : Prints the content of the given config_t file out
@@ -109,6 +113,7 @@ config_read(config_t* config)
 	} else {
 		INFO("(!) read failed");
 	}
+	DBG_OUT("SIZE OF CONFIG after load: ", sizeof(config));
 
   ETS_GPIO_INTR_ENABLE();
   return r; 
@@ -186,6 +191,7 @@ config_save(config_t* unsaved_config)
   // unsaved_config->magic = CONFIG_MAGIC;
   // Erase configuration sector
   if (SPI_FLASH_RESULT_OK == config_erase() ){
+	
     // write new config in flash
     if (SPI_FLASH_RESULT_OK == config_write(unsaved_config)){
       DBG_OUT("wrote new configuration file to flash memory");
@@ -348,6 +354,8 @@ config_init() {
     config_save(&global_cfg); 
 		config_read(&global_cfg); 
 		config_print(&global_cfg);
+
+		INFO("Config size: %u", getConfigSize() );
 
     return CONFIG_INITIAL;
   }

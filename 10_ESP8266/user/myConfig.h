@@ -45,8 +45,8 @@ typedef struct {
 // 96 Bytes
 
 typedef struct {
-	char     		id[32];               // unique recieved from server
-	char     		token[CONFIG_SIZE_TKN];            // unique recieved from server
+	uint8_t     id[32];               // unique recieved from server
+	uint8_t     token[CONFIG_SIZE_TKN];            // unique recieved from server
 	uint8_t     srv_address[3];       // adress for the server
 	uint16_t    srv_port;             // port for the server
 } gm_Srv_t;
@@ -76,6 +76,7 @@ typedef struct {
 
 config_t global_cfg;
 
+uint16_t getConfigSize(void);
 void ICACHE_FLASH_ATTR config_print(config_t* config);
 SpiFlashOpResult ICACHE_FLASH_ATTR config_write(config_t* config);
 SpiFlashOpResult ICACHE_FLASH_ATTR config_read(config_t* config);

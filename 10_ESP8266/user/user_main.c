@@ -60,6 +60,7 @@ os_timer_t earthprobe_timer;
 void intr_handle_cb(void);
 void enable_reset_interrupt(void);
 
+void user_set_softap_config(void);
 /******************************************************************************
  * FunctionName : test_config
  * Description  : Test routine for configuration file
@@ -413,22 +414,24 @@ wifi_handle_event_cb(System_Event_t *evt)
 void ICACHE_FLASH_ATTR
 user_set_softap_config(void)
 {
-   struct softap_config config;
+	struct softap_config config;
 
-   wifi_softap_get_config(&config); // Get config first.
-  
-   //TODO: LOAD Config from Flash Memory. 
-   os_memset(config.ssid, 0, 32);
-   os_memset(config.password, 0, 64);
-   os_memcpy(config.ssid, "Greemon_default", 15);
-   os_memcpy(config.password, "", 0);
-   config.authmode = AUTH_OPEN;
-   config.ssid_len = 0;		// or its actual length
-   config.max_connection = HTTP_CONNECTION_MAX; // how many stations can connect to ESP8266 softAP at most.
+	wifi_softap_get_config(&config); // Get config first.
 
-   	wifi_softap_set_config(&config);// Set ESP8266 softap config .
-   
-		wifi_ipv4_setDefault();
+	//TODO: LOAD Config from Flash Memory. 
+	os_memset(config.ssid, 0, 32);
+	os_memset(config.password, 0, 64);
+	os_memcpy(config.ssid, "Greemon_default", 15);
+	os_memcpy(config.password, "", 0);
+	config.authmode = AUTH_OPEN;
+	config.ssid_len = 0;		// or its actual length
+
+	// how many stations can connect to ESP8266 softAP
+	config.max_connection = HTTP_CONNECTION_MAX; 
+	
+	wifi_softap_set_config(&config);// Set ESP8266 softap config .
+	
+	wifi_ipv4_setDefault();
 }
 
 /*****************************************************************************
