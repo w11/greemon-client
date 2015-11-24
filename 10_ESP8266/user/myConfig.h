@@ -4,14 +4,14 @@
 /* NOTICE !!! ---this is for 512KB spi flash.*/
 /* You can change to other sector if you use other size spi flash. */
 /* Refer to the documentation about OTA support and flash mapping*/
-#define CONFIG_SECTOR_START 0x3E
+#define CONFIG_SECTOR_START 0x3B
 #define CONFIG_ADDRESS_START (SPI_FLASH_SEC_SIZE * CONFIG_SECTOR_START)
 
 #define CONFIG_MAX_CHAR 64
 #define CONFIG_MAGIC 0xCAFEC0DE
 #define CONFIG_MAGIC_RESET 0xDEADBEEF
 #define CONFIG_VERSION 1
-#define CONFIG_MAX_DATASETS 30
+#define CONFIG_MAX_DATASETS 3
 #define CONFIG_SIZE_SSID 32
 #define CONFIG_SIZE_TKN 32
 #define CONFIG_SIZE_PASS 32

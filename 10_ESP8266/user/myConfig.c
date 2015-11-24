@@ -27,6 +27,7 @@ config_print(config_t* config){
 	DBG_OUT("CHIP: \t%u", system_get_chip_id());
 	DBG_OUT("======= CONFIG START =======");
 	DBG_OUT("ADDR: \t%x", &config);
+	DBG_OUT("MADR: \t%x", CONFIG_ADDRESS_START);
 	DBG_OUT("MAGC: \t%x", config->magic);
 	DBG_OUT("VERS: \t%d", config->version);
 	DBG_OUT("RAND: \t%d", config->random);
@@ -72,9 +73,9 @@ config_write(config_t* config) {
   volatile SpiFlashOpResult r = SPI_FLASH_RESULT_ERR;
 
   r = spi_flash_write( 
-			CONFIG_ADDRESS_START,  	// dest
-      (uint32_t*)config,			// src               
-      sizeof(config_t) 				// length
+			(uint32_t)CONFIG_ADDRESS_START,  	// dest
+      (uint32_t*)config,								// src               
+      (uint32_t)sizeof(config_t) 				// length
 	);               
 
   if (SPI_FLASH_RESULT_OK == r) {	
@@ -105,7 +106,7 @@ config_read(config_t* config)
   r = spi_flash_read(  
 		(uint32_t)CONFIG_ADDRESS_START,		// source 
     (uint32_t*)config,                // dest
-    sizeof(config_t) 									// data length
+    (uint32_t)sizeof(config_t) 									// data length
 	);               	
 
   if (SPI_FLASH_RESULT_OK == r) {	
@@ -142,9 +143,6 @@ config_erase(void)
   if (config_size < SPI_FLASH_SEC_SIZE) num_sectors = ( config_size / SPI_FLASH_SEC_SIZE ) +1;
 
   end_sector += num_sectors;
-
-  //DBG_OUT("cfg-size: %d bytes, sector-size: %d bytes, sector-start: 0x%x, sector-end: 0x%x", config_size, SPI_FLASH_SEC_SIZE, CONFIG_SECTOR_START, end_sector-1);
-  //DBG_OUT("erasing %d bytes ( %d sectors ) in flash for the configuration data", num_sectors*SPI_FLASH_SEC_SIZE, num_sectors);
 
   ETS_GPIO_INTR_DISABLE();
   SpiFlashOpResult r = SPI_FLASH_RESULT_ERR;
