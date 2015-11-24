@@ -15,7 +15,7 @@
 #include "mem.h"
 #include "myConfig.h"
 
-LOCAL uint8_t indexPage[] = "<html>\
+LOCAL const char indexPage[] = "<html>\
 <head>\
 <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />\
 <link href=\"data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAIIjAAA2DgCMYRYAYz8AAABUFwDHnFIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACIiVQAAAABENVURMwAABDM1URZmMABDMzMRFmZjAEMzM2ZmEWUEM1VRYWEREVQzNVFhERERVDVTFhERERFUNTMWEREREVQzNRZmYRERVDMzZhYRERFQQzNmEREWYwBDM2ZhERFjAAQzZmEWZjAAAEQ2ZmYzAAAAAEQzMwAAD4HwAA4AcAAMADAACAAQAAgAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIABAACAAQAAwAMAAOAHAAD4HwAA\" rel=\"icon\" type=\"image/x-icon\" />\
@@ -31,7 +31,7 @@ LOCAL uint8_t indexPage[] = "<html>\
 </body>\
 </html>"; 
 
-LOCAL uint8_t aboutPage[] = "<html>\
+LOCAL const char aboutPage[] = "<html>\
 <head>\
 <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />\
 <link href=\"data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAIIjAAA2DgCMYRYAYz8AAABUFwDHnFIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACIiVQAAAABENVURMwAABDM1URZmMABDMzMRFmZjAEMzM2ZmEWUEM1VRYWEREVQzNVFhERERVDVTFhERERFUNTMWEREREVQzNRZmYRERVDMzZhYRERFQQzNmEREWYwBDM2ZhERFjAAQzZmEWZjAAAEQ2ZmYzAAAAAEQzMwAAD4HwAA4AcAAMADAACAAQAAgAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIABAACAAQAAwAMAAOAHAAD4HwAA\" rel=\"icon\" type=\"image/x-icon\" />\
@@ -48,7 +48,8 @@ LOCAL uint8_t aboutPage[] = "<html>\
 </body>\
 </html>"; 
 
-LOCAL uint8_t savePage[] = "<html>\
+
+LOCAL const char savePage[] = "<html>\
 <head>\
 <link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />\
 <link href=\"data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAIIjAAA2DgCMYRYAYz8AAABUFwDHnFIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACIiVQAAAABENVURMwAABDM1URZmMABDMzMRFmZjAEMzM2ZmEWUEM1VRYWEREVQzNVFhERERVDVTFhERERFUNTMWEREREVQzNRZmYRERVDMzZhYRERFQQzNmEREWYwBDM2ZhERFjAAQzZmEWZjAAAEQ2ZmYzAAAAAEQzMwAAD4HwAA4AcAAMADAACAAQAAgAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIABAACAAQAAwAMAAOAHAAD4HwAA\" rel=\"icon\" type=\"image/x-icon\" />\
@@ -60,9 +61,10 @@ LOCAL uint8_t savePage[] = "<html>\
 </body>\
 </html>"; 
 
+
 // Info: According to the documentation of the standard, the length of an SSID should be a maximum of 32 characters
 // Password 8-63 (64?)
-LOCAL uint8_t configPage[] = "<!DOCTYPE html>\
+LOCAL const char configPage[] = "<!DOCTYPE html>\
 <html>\
 <head>\
 <meta charset=\"utf-8\">\
@@ -106,18 +108,19 @@ LOCAL uint8_t configPage[] = "<!DOCTYPE html>\
 </body>\
 </html>"; 
 
-LOCAL uint8_t styleSheet[] = "\
+LOCAL const char styleSheet[] = "\
 /* Reset CSS, opensource.736cs.com MIT */\
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td,article,aside,audio,canvas,details,figcaption,figure,footer,header,hgroup,mark,menu,meter,nav,output,progress,section,summary,time,video{border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent;margin:0;padding:0;}body{line-height:1;}article,aside,dialog,figure,footer,header,hgroup,nav,section,blockquote{display:block;}nav ul{list-style:none;}ol{list-style:decimal;}ul{list-style:disc;}ul ul{list-style:circle;}blockquote,q{quotes:none;}blockquote:before,blockquote:after,q:before,q:after{content:none;}ins{text-decoration:underline;}del{text-decoration:line-through;}mark{background:none;}abbr[title],dfn[title]{border-bottom:1px dotted #000;cursor:help;}table{border-collapse:collapse;border-spacing:0;}hr{display:block;height:1px;border:0;border-top:1px solid #ccc;margin:1em 0;padding:0;}input[type=submit],input[type=button],button{margin:0!important;padding:0!important;}input,select,a img{vertical-align:middle;}\
-body{ font-family: Helvetica, sans-serif; color: #222; }";
+body{ font-family: Helvetica, sans-serif; color: #222; }\
+";
 
-static const uint8_t *httpNotFoundHeader = "HTTP/1.0 404 Not Found\r\n\
+LOCAL const char *httpNotFoundHeader = "HTTP/1.0 404 Not Found\r\n\
 Server: greemon-httpd/"HTTP_VERSION"\r\n\
 Connection: close\r\n\
 Content-Type: text/plain\r\n\
 Content-Length: 12\r\n\r\n\
 Not Found.\r\n";
-static const uint8_t *httpNotImplementedHeader = "HTTP/1.0 501 Not Implemented\r\n\
+LOCAL const char *httpNotImplementedHeader = "HTTP/1.0 501 Not Implemented\r\n\
 Server: greemon-httpd/"HTTP_VERSION"\r\n\
 Connection: close\r\n\
 Content-Type: text/plain\r\n\
@@ -221,7 +224,7 @@ user_set_station_config(gm_APN_t* apn)
  *								length - recieved data length
  * Returns      : bool - config could be saved or not
 *******************************************************************************/
-uint16_t webserver_parse_post_content_length(char *pusrdata, unsigned short *pLength)
+LOCAL uint16_t ICACHE_FLASH_ATTR webserver_parse_post_content_length(char *pusrdata, unsigned short *pLength)
 {
 	uint16_t 	sp = 0; // start parsing
 	uint8_t 	noc = 0; // number of characters to copy
@@ -323,16 +326,20 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 			if (delimiter == pPost_content[pos]) countKeyValuePairs++;
 			++pos;
 		}
+		countKeyValuePairs++; // THIS IS A BUGFIX /TODO EVALUATE
 		//DBG_OUT("found %u Key-Pairs", countKeyValuePairs+1);
 
 		// Allocate pointer array
-		pKeyValuePair = (uint32_t*)os_malloc(sizeof(uint32_t)*countKeyValuePairs);
+		pKeyValuePair = (uint32_t*)os_zalloc((sizeof(uint32_t)) * (countKeyValuePairs));
+		INFO("allocated memory for %u Pointer",(countKeyValuePairs));
+
 		if (NULL == pKeyValuePair) return false; // TODO err code
-				
+
 		// now split the c string - means we change & to \0		
 		pos = 0;
 		countKeyValuePairs = 0;
-		pKeyValuePair[countKeyValuePairs++] = (uint32_t)pPost_content+pos; // first key-value-pair
+		pKeyValuePair[countKeyValuePairs] = (uint32_t)pPost_content+pos; // first key-value-pair
+		countKeyValuePairs++;		
 		while (pos < clen) {
 			if (delimiter == pPost_content[pos]) {
 				pPost_content[pos] = '\0';
@@ -345,59 +352,42 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 
 		// Find Server Configuration
 		for (pos = 0; pos < countKeyValuePairs; pos++){
+		system_soft_wdt_feed();		
+		INFO("feed wdt");
+		DBG_OUT("pKeyValuePair %i: \t%x",pos,&pKeyValuePair+pos);
 			// Output the string from the pointer of the array
 			// DBG_OUT("KEYVALUE: %s", pKeyValuePair[pos] );	
 			// parse content and map to config
 			if (0 == os_strncmp(pKeyValuePair[pos],"ip=",3)) {
-				DBG_OUT("Found IP: %s",pKeyValuePair[pos]+3);
-				//TODO SPLIT!	
-				DBG_OUT("saving fist octett");
-				Srv_data.srv_address[0] = 0;
-				DBG_OUT("saving second octett");
-				Srv_data.srv_address[1] = 1;
-				Srv_data.srv_address[2] = 2;
-				Srv_data.srv_address[3] = 3;
-				DBG_OUT("RSRV: \t%d.%d.%d.%d", 
-						Srv_data.srv_address[0], 
-						Srv_data.srv_address[1], 
-						Srv_data.srv_address[2], 
-						Srv_data.srv_address[3]);
+				//DBG_OUT("Found IP: %s",pKeyValuePair[pos]+3);
 
-				if (0 == os_strncmp(pKeyValuePair[pos]+3,"http",4))
-				{
-					// HTTP Address. Not supported yet :(
-				}	else {
-					// Split the ip address 000.000.000.000
-
-				}
 			} else if (0 == os_strncmp(pKeyValuePair[pos],"ssid=",5)) {
-				DBG_OUT("Found ssid: %s",pKeyValuePair[pos]+5);
+				//DBG_OUT("Found ssid: %s",pKeyValuePair[pos]+5);
 				os_memcpy(APN_data.ssid,pKeyValuePair[pos]+5,CONFIG_SIZE_SSID);
-				DBG_OUT("Saved SSID: %s",APN_data.ssid);
 
 			} else if (0 == os_strncmp(pKeyValuePair[pos],"token=",6)) {
-				DBG_OUT("Found token: %s",pKeyValuePair[pos]+6);
+				//DBG_OUT("Found token: %s",pKeyValuePair[pos]+6);
 				os_memcpy(Srv_data.token,pKeyValuePair[pos]+6,CONFIG_SIZE_TKN);
-				DBG_OUT("Saved Token: %s",Srv_data.token);
 
 			} else if (0 == os_strncmp(pKeyValuePair[pos],"pass=",5)) {
-				DBG_OUT("Found pass: %s",pKeyValuePair[pos]+5);
+				//DBG_OUT("Found pass: %s",pKeyValuePair[pos]+5);
 				os_memcpy(APN_data.pass,pKeyValuePair[pos]+5,CONFIG_SIZE_PASS);
-				DBG_OUT("Saved Pass: %s",APN_data.pass);
 
 			} else if (0 == os_strncmp(pKeyValuePair[pos],"port=",5)) {
-				DBG_OUT("Found port: %s",pKeyValuePair[pos]+5);
+				//DBG_OUT("Found port: <%s>",pKeyValuePair[pos]+5);
 				temp_Port = (uint16_t)atoi(pKeyValuePair[pos]+5);
-				DBG_OUT("Temp Port: %u",temp_Port);
-				Srv_data.srv_port = (uint16_t)temp_Port;
-				//os_memcpy(Srv_data.srv_port,temp_Port,sizeof(uint16_t));
-				DBG_OUT("Saved Port: %u",Srv_data.srv_port);
+				//DBG_OUT("Temp Port: <%u>",temp_Port);
+				//Srv_data.srv_port = (uint16_t)temp_Port;
+				os_memcpy(&Srv_data.srv_port,&temp_Port,sizeof(uint16_t));
 			}
 		}		
 
 		DBG_OUT("APN Data ADDR: %x",&APN_data);
+		DBG_OUT("Saved Port: %u",		Srv_data.srv_port);
+		DBG_OUT("Saved Token: %s",	Srv_data.token);
+		DBG_OUT("Saved SSID: %s",		APN_data.ssid);
+		DBG_OUT("Saved Pass: %s",		APN_data.pass);
 
-		// 5 		Parse and save
 		DBG_OUT("Trying to save into config");
 		if (config_write_apn(&APN_data)) {
 			INFO("write apn success");
@@ -406,10 +396,13 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 		}
 
 		// Free Heap
+		INFO("Free Content");
 		os_free(pPost_content);
+		INFO("Free Key Value")
 		os_free(pKeyValuePair);
 
 	} else {
+		ERR_OUT("malloc failed");
 		return false; // TODO return Code	
 	}
 	
@@ -501,6 +494,7 @@ Connection: Keep-Alive\r\n\r\n\
 				INFO("todo: restarting controller with saved configuration");			
 			}
 // Insert the contents of the saving Page
+			os_bzero(&responseBuffer, sizeof(responseBuffer));
 			l = os_sprintf(responseBuffer, 
 "HTTP/1.1 200 OK\r\n\
 Content-Type: text/html\r\n\
@@ -519,7 +513,9 @@ Connection: Keep-Alive\r\n\r\n\
 
 	if ((0 != l) || (NULL != responseBuffer)) { // Check if theres something in the buffer to send.
 		INFO("Sending response...");
-		//INFO("free heap: %u Bytes",system_get_free_heap_size());
+		INFO("free heap: %u Bytes",system_get_free_heap_size());
+
+		
 		if (0==espconn_sent((struct espconn*)arg, (uint8_t*)responseBuffer, l) ) {
 			DBG_OUT("Response sent!");
 		} else {
@@ -689,7 +685,8 @@ webserver_regist_connect(void *arg)
  * Parameters   : port -- server port
  * Returns      : Status/Error Code
 *******************************************************************************/
-uint8_t webserver_init(uint32_t port) {
+LOCAL uint8_t ICACHE_FLASH_ATTR
+webserver_init(uint32_t port) {
 
 	uint8_t i = 0;
 	INFO("initializing webserver");
