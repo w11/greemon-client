@@ -59,7 +59,32 @@ os_timer_t earthprobe_timer;
 void intr_handle_cb(void);
 void enable_reset_interrupt(void);
 
-void user_set_softap_config(void);
+void user_set_softap_config_default(void);
+void user_wifi_connect_ap(config_t* g);
+
+
+/******************************************************************************
+ * FunctionName : test_thinkspeak
+ * Description  : Test routine for thinkpeak file
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+void test_thinkspeak(void) {
+	LOCAL struct espconn tcpconn;
+	LOCAL esp_tcp tcp;
+
+	tcp.remote_port = global_cfg.gm_auth_data.srv_port;
+	tcp.remote_ip[0] = global_cfg.gm_auth_data.srv_address[0];
+	tcp.remote_ip[1] = global_cfg.gm_auth_data.srv_address[1];
+	tcp.remote_ip[2] = global_cfg.gm_auth_data.srv_address[2];
+	tcp.remote_ip[3] = global_cfg.gm_auth_data.srv_address[3];
+
+	tcp.local_port = espconn_port();
+	
+	//TODO
+	espconn_send(&tcpconn, "", );
+	
+}
 /******************************************************************************
  * FunctionName : test_config
  * Description  : Test routine for configuration file
@@ -302,7 +327,7 @@ void system_init_done(void){
     case CONFIG_INITIAL:
       INFO("generated initial configuration");
 			INFO("loading default ap settings");
-			user_set_softap_config();
+			user_set_softap_config_default();
 			DBG_OUT("starting webserver");
 			webserver_init(HTTP_PORT);
     break;
@@ -313,10 +338,12 @@ void system_init_done(void){
 			// connect if found
 			// else try again after a few seconds
 			// startup webconfig if not connected
-			INFO("scanning available access points");
-			wifi_station_ap_number_set(20);
+			// Load SSID and Pass
+			user_wifi_connect_ap(&global_cfg);
+			//INFO("scanning available access points");
+			//wifi_station_ap_number_set(20);
 			//wifi scan has to after system init done.
-			wifi_scan();
+			//wifi_scan();
     break;
   }
 	init_done = true;
@@ -362,22 +389,22 @@ wifi_handle_event_cb(System_Event_t *evt)
 	DBG_OUT(">>WiFi Event: %x", evt->event);
 	switch (evt->event) {
 		case EVENT_STAMODE_CONNECTED:
-			DBG_OUT("Greemon: Connect to SSID %s. Channel: %d",
+			INFO("Greemon: Connect to SSID %s. Channel: %d",
 				evt->event_info.connected.ssid,
 				evt->event_info.connected.channel);
 		break;
 		case EVENT_STAMODE_DISCONNECTED:
-			DBG_OUT("Greemon: Disconnected from SSID %s. Reason: %d",
+			INFO("Greemon: Disconnected from SSID %s. Reason: %d",
 				evt->event_info.disconnected.ssid,
 				evt->event_info.disconnected.reason);
 		break;
 		case EVENT_STAMODE_AUTHMODE_CHANGE:
-			DBG_OUT("Greemon: Changed Authmode %d -> %d",
+			INFO("Greemon: Changed Authmode %d -> %d",
 				evt->event_info.auth_change.old_mode,
 				evt->event_info.auth_change.new_mode);
 		break;
 		case EVENT_STAMODE_GOT_IP:
-			DBG_OUT("Greemon: Optained Address from DHCP Server."); 
+			INFO("Greemon: Optained Address from DHCP Server."); 
 			DBG_OUT(">> IP:" IPSTR "\tMask:" IPSTR "\tGW:" IPSTR,
 				IP2STR(&evt->event_info.got_ip.ip),
 				IP2STR(&evt->event_info.got_ip.mask),
@@ -388,12 +415,12 @@ wifi_handle_event_cb(System_Event_t *evt)
         user_sntp_start();
 		break;
 		case EVENT_SOFTAPMODE_STACONNECTED:
-			DBG_OUT("New Client: " MACSTR " joined, AID = %d",
+			INFO("New Client: " MACSTR " joined, AID = %d",
 				MAC2STR(evt->event_info.sta_connected.mac),
 				evt->event_info.sta_connected.aid);
 		break;
 		case EVENT_SOFTAPMODE_STADISCONNECTED:
-			DBG_OUT("Old Client: " MACSTR " leaved, AID = %d",
+			INFO("Old Client: " MACSTR " leaved, AID = %d",
 				MAC2STR(evt->event_info.sta_disconnected.mac),
 				evt->event_info.sta_disconnected.aid);
 		break;
@@ -406,13 +433,36 @@ wifi_handle_event_cb(System_Event_t *evt)
 }
 
 /******************************************************************************
- * FunctionName : user_set_softap_config
+ * FunctionName : user_wifi_connect_ap
+ * Description  : load station config with the given values and connect to ap
+ * Parameters   : g: configuration struct
+ * Returns      : none
+*******************************************************************************/
+void ICACHE_FLASH_ATTR
+user_wifi_connect_ap(config_t* g)
+{
+	struct station_config sc;
+	wifi_station_disconnect();
+
+	wifi_set_opmode_current(STATION_MODE);
+
+	strncpy(sc.ssid, g->gm_apn_data.ssid, CONFIG_SIZE_SSID );
+	strncpy(sc.password, g->gm_apn_data.pass, CONFIG_SIZE_PASS );
+	
+	wifi_station_set_config_current(&sc);
+
+	INFO("Trying to connect to access point %s, with pasword %s", sc.ssid, sc.password);
+	wifi_station_connect();
+}
+
+/******************************************************************************
+ * FunctionName : ser_set_softap_config_default
  * Description  : set SSID and password of ESP8266 softAP
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
 void ICACHE_FLASH_ATTR
-user_set_softap_config(void)
+user_set_softap_config_default(void)
 {
 	struct softap_config config;
 
