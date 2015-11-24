@@ -14,6 +14,7 @@
 #include "espconn.h" // FOR WEBSERVER
 #include "mem.h"
 #include "myConfig.h"
+#include "/opt/esp-open-sdk/sdk/include/ip_addr.h"
 
 LOCAL const char indexPage[] = "<html>\
 <head>\
@@ -275,6 +276,7 @@ LOCAL uint16_t ICACHE_FLASH_ATTR webserver_parse_post_content_length(char *pusrd
 	return content_length;
 }
 
+
 /******************************************************************************
  * FunctionName : webserver_parse_post_content
  * Description  : parse the content and return an array
@@ -285,12 +287,15 @@ LOCAL uint16_t ICACHE_FLASH_ATTR webserver_parse_post_content_length(char *pusrd
 bool ICACHE_FLASH_ATTR
 webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 {
+	bool exitStatus = false;
+
 	// These settings are going to be filled
 	gm_Base_t Base_data;
 	gm_Srv_t	Srv_data;
 	gm_APN_t	APN_data;
 
 	uint16_t	post_length = *pLength;
+	static ip_addr_t ipaddr_temp;
 
 	const char 	delimiter = '&';
 	uint32_t*	pKeyValuePair = NULL;
@@ -352,15 +357,22 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 
 		// Find Server Configuration
 		for (pos = 0; pos < countKeyValuePairs; pos++){
-		system_soft_wdt_feed();		
-		INFO("feed wdt");
-		DBG_OUT("pKeyValuePair %i: \t%x",pos,&pKeyValuePair+pos);
+		system_soft_wdt_feed();
 			// Output the string from the pointer of the array
 			// DBG_OUT("KEYVALUE: %s", pKeyValuePair[pos] );	
 			// parse content and map to config
 			if (0 == os_strncmp(pKeyValuePair[pos],"ip=",3)) {
 				//DBG_OUT("Found IP: %s",pKeyValuePair[pos]+3);
-
+				if (1 == ipaddr_aton(pKeyValuePair[pos]+3, &ipaddr_temp) ) {
+					INFO("ip extracted");
+					//os_memcpy(&Srv_data.srv_address,&ipaddr_temp,sizeof(uint32_t));
+					Srv_data.srv_address[0] = ip4_addr1(&ipaddr_temp.addr);
+					Srv_data.srv_address[1] = ip4_addr2(&ipaddr_temp.addr);
+					Srv_data.srv_address[2] = ip4_addr3(&ipaddr_temp.addr);
+					Srv_data.srv_address[3] = ip4_addr4(&ipaddr_temp.addr);
+				}	else {
+					ERR_OUT("extracting IP address failed")
+				}				
 			} else if (0 == os_strncmp(pKeyValuePair[pos],"ssid=",5)) {
 				//DBG_OUT("Found ssid: %s",pKeyValuePair[pos]+5);
 				os_memcpy(APN_data.ssid,pKeyValuePair[pos]+5,CONFIG_SIZE_SSID);
@@ -382,18 +394,20 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 			}
 		}		
 
+		//DBG_OUT("ip: %s", (char*)ipaddr_ntoa( ipaddr_temp.addr ));
+
 		DBG_OUT("APN Data ADDR: %x",&APN_data);
+		DBG_OUT("SRV Data ADDR: %x",&Srv_data);
+		DBG_OUT("Saved Address: %u.%u.%u.%u",Srv_data.srv_address[0],Srv_data.srv_address[1],Srv_data.srv_address[2],Srv_data.srv_address[3]);
 		DBG_OUT("Saved Port: %u",		Srv_data.srv_port);
 		DBG_OUT("Saved Token: %s",	Srv_data.token);
 		DBG_OUT("Saved SSID: %s",		APN_data.ssid);
 		DBG_OUT("Saved Pass: %s",		APN_data.pass);
 
 		DBG_OUT("Trying to save into config");
-		if (config_write_apn(&APN_data)) {
-			INFO("write apn success");
-		} else {
-			ERR_OUT("An error occured. Config not saved");
-		}
+
+		if ( config_write_srv(&Srv_data) && config_write_apn(&APN_data) ) INFO("successfully saved parsed config");
+		
 
 		// Free Heap
 		INFO("Free Content");
@@ -403,12 +417,12 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 
 	} else {
 		ERR_OUT("malloc failed");
-		return false; // TODO return Code	
+		exitStatus = false; // TODO return Code	
 	}
 	
 	// Everything went ok
 	INFO("parsing success");
-	return true;		
+	return exitStatus;		
 
 }
 

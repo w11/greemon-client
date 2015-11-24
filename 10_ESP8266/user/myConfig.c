@@ -34,12 +34,14 @@ config_print(config_t* config){
 	DBG_OUT("----------------------------");
 	DBG_OUT("SSID: \t%s", config->gm_apn_data.ssid);
 	DBG_OUT("PASS: \t%s", config->gm_apn_data.pass);
-	DBG_OUT("ADSA: \t%d.%d.%d.%d:%d", 
+	DBG_OUT("----------------------------");
+	DBG_OUT("ADDR: \t%d.%d.%d.%d:%d", 
 	    config->gm_auth_data.srv_address[0], 
 	    config->gm_auth_data.srv_address[1], 
 	    config->gm_auth_data.srv_address[2], 
 	    config->gm_auth_data.srv_address[3],
 	    config->gm_auth_data.srv_port );
+	DBG_OUT("TOKN: \t%s", config->gm_auth_data.token);
 	DBG_OUT("======= CONFIG END =========");
 	DBG_OUT("====== SAVED VALUES ========");
 	for (i = 0; i<=config->storedData-1; i++){
@@ -219,6 +221,7 @@ config_write_apn(gm_APN_t* apn){
 	config_read(&global_cfg);
 	global_cfg.magic = CONFIG_MAGIC;
 	os_memcpy(&global_cfg.gm_apn_data, apn, sizeof(gm_APN_t));
+	config_print(&global_cfg);
 	if (SPI_FLASH_RESULT_OK == config_save(&global_cfg))
 	{
 		INFO("success");
@@ -241,7 +244,8 @@ config_write_srv(gm_Srv_t* srv_data){
 	INFO("writing auth data to config");
 	config_read(&global_cfg);
 	global_cfg.magic = CONFIG_MAGIC;
-	os_memcpy(global_cfg.gm_auth_data, srv_data, sizeof(gm_Srv_t));
+	os_memcpy(&global_cfg.gm_auth_data, srv_data, sizeof(gm_Srv_t));
+	config_print(&global_cfg);
 	if (SPI_FLASH_RESULT_OK == config_save(&global_cfg))
 	{
 		INFO("success");
@@ -347,6 +351,16 @@ config_init() {
 		DBG_OUT("Saving APN Data");
 		os_memcpy(global_cfg.gm_apn_data.ssid, CONFIG_STD_APNAME, sizeof(global_cfg.gm_apn_data.ssid));
 		os_memcpy(global_cfg.gm_apn_data.pass, CONFIG_STD_PASS, sizeof(global_cfg.gm_apn_data.pass));
+
+		DBG_OUT("Saving SRV Data");
+		global_cfg.gm_auth_data.srv_address[0] = 0;
+		global_cfg.gm_auth_data.srv_address[1] = 0;
+		global_cfg.gm_auth_data.srv_address[2] = 0;
+		global_cfg.gm_auth_data.srv_address[3] = 0;
+		DBG_OUT("saving port");
+		global_cfg.gm_auth_data.srv_port = 80;
+		DBG_OUT("saving token");
+		os_memcpy(global_cfg.gm_auth_data.token, "NoTokenSaved\0", CONFIG_SIZE_TKN * sizeof(uint8_t));
 
 		DBG_OUT("Saving Config");
     config_save(&global_cfg); 

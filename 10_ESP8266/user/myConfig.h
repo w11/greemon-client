@@ -1,10 +1,12 @@
 #ifndef __MY_CONFIG_H__
 #define __MY_CONFIG_H__
 
+#include "ip_addr.h"
+
 /* NOTICE !!! ---this is for 512KB spi flash.*/
 /* You can change to other sector if you use other size spi flash. */
 /* Refer to the documentation about OTA support and flash mapping*/
-#define CONFIG_SECTOR_START 0x3B
+#define CONFIG_SECTOR_START 0x3E
 #define CONFIG_ADDRESS_START (SPI_FLASH_SEC_SIZE * CONFIG_SECTOR_START)
 
 #define CONFIG_MAX_CHAR 64
@@ -12,9 +14,10 @@
 #define CONFIG_MAGIC_RESET 0xDEADBEEF
 #define CONFIG_VERSION 1
 #define CONFIG_MAX_DATASETS 3
-#define CONFIG_SIZE_SSID 32
+
+#define CONFIG_SIZE_SSID 32 //TODO check for size 
 #define CONFIG_SIZE_TKN 32
-#define CONFIG_SIZE_PASS 32
+#define CONFIG_SIZE_PASS 64
 
 #define CONFIG_STD_APNAME "GREEMON_DEFAULT"
 #define CONFIG_STD_PASS ""
@@ -45,15 +48,15 @@ typedef struct {
 // 96 Bytes
 
 typedef struct {
-	uint8_t     id[32];               // unique recieved from server
-	uint8_t     token[CONFIG_SIZE_TKN];            // unique recieved from server
-	uint8_t     srv_address[3];       // adress for the server
-	uint16_t    srv_port;             // port for the server
+	uint8_t     id[32];               	// unique recieved from server
+	uint8_t     token[CONFIG_SIZE_TKN];	// unique recieved from server
+	uint8_t     srv_address[3];       	// adress for the server
+	uint16_t    srv_port;             	// port for the server
 } gm_Srv_t;
 
 typedef struct {
-	uint8_t     ssid[CONFIG_SIZE_SSID];             // Access Point
-	uint8_t     pass[CONFIG_SIZE_PASS];             // Authentication Data
+	uint8_t     ssid[CONFIG_SIZE_SSID];	// Access Point
+	uint8_t     pass[CONFIG_SIZE_PASS];	// Authentication Data
 } gm_APN_t;
 
 typedef struct {
