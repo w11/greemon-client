@@ -40,10 +40,10 @@
 #define ERR_OUT
 #endif   /* ERR_OUT_ENABLE */
 
-//#define ICACHE_STORE_TYPEDEF_ATTR __attribute__((aligned(4),packed))
-//#define ICACHE_STORE_ATTR __attribute__((aligned(4)))
-//#define ICACHE_RAM_ATTR __attribute__((section(".iram0.text")))
-// #define ICACHE_RODATA_ATTR __attribute__((section(".rodata2.text")))
+#define ICACHE_STORE_TYPEDEF_ATTR __attribute__((aligned(4),packed))
+#define ICACHE_STORE_ATTR __attribute__((aligned(4)))
+#define ICACHE_RAM_ATTR __attribute__((section(".iram0.text")))
+//#define ICACHE_RODATA_ATTR __attribute__((section(".rodata2.text")))
 
 
 //#define GPIO_INTERRUPT_ENABLE

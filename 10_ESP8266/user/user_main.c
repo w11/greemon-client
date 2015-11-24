@@ -22,7 +22,6 @@
 
 #include "driver/uart.h"
 #include "driver/uart_register.h"
-#include "myConsole.h"
 #include "spi_flash.h"
 #include "myWifiServer.h"
 #include "myConfig.h"
@@ -30,7 +29,7 @@
 
 #include "gpio.h"
 
-#define MEMLEAK_DEBUG
+//#define MEMLEAK_DEBUG
 
 #define BH1750_PIN_SDA 2
 #define BH1750_PIN_SCL 14
@@ -309,6 +308,7 @@ void system_init_done(void){
     break;
     case CONFIG_MAGIC_FOUND:
       INFO("configuration loaded");
+			config_print(&global_cfg);
 			// search for ap name in config
 			// connect if found
 			// else try again after a few seconds
