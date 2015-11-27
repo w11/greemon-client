@@ -26,25 +26,34 @@
 #include "myWifiServer.h"
 #include "myConfig.h"
 #include "myNTP.h"
+#include "myTest.h"
 
 #include "gpio.h"
+#include "myThingspeakClient.h"
 
 //#define MEMLEAK_DEBUG
 
 #define BH1750_PIN_SDA 2
 #define BH1750_PIN_SCL 14
 
-#define DBG_USE_TESTCONFIG false
-
 typedef enum greemon_state {
 	_STATE_INITIAL = 0,
 	_STATE_STARTUP = 1,
+	_STATE_WAKEUP,
 	_STATE_LOAD_CONFIG,
+	_STETE_CONFIG_INITIAL,
+	_STATE_CONFIG_LOADED,
 	_STATE_START_WEBSERVER,
+	_STATE_WEBSERVER_RUNNING,
+	_STATE_WEBSERVER_STOPPED,
+	_STATE_READ_SENSOR_VALUES,
+	_STATE_RECIEVED_SENSOR_VALUES,
 	_STATE_WIFI_SCAN_RUNNING,
 	_STATE_WIFI_SCAN_FINISHED,
+	_STATE_DEEP_SLEEP,
 	_STATE_RESTART,
-	_STATE_IN_ERROR
+	_STATE_IN_ERROR,
+	_STATE_IDLE,
 } greemon_state_t;
 
 LOCAL bool WifiScanComplete = false;
@@ -55,13 +64,14 @@ os_timer_t timerDHT;
 os_timer_t i2ctest_timer;
 os_timer_t deepsleep_timer;
 os_timer_t earthprobe_timer;
+os_timer_t ts_timer;
 
 void intr_handle_cb(void);
 void enable_reset_interrupt(void);
 
 void user_set_softap_config_default(void);
 void user_wifi_connect_ap(config_t* g);
-
+void ts_timer_cb(void);
 
 /******************************************************************************
  * FunctionName : test_thinkspeak
@@ -70,92 +80,28 @@ void user_wifi_connect_ap(config_t* g);
  * Returns      : none
 *******************************************************************************/
 void test_thinkspeak(void) {
-	LOCAL struct espconn tcpconn;
-	LOCAL esp_tcp tcp;
-
-	tcp.remote_port = global_cfg.gm_auth_data.srv_port;
-	tcp.remote_ip[0] = global_cfg.gm_auth_data.srv_address[0];
-	tcp.remote_ip[1] = global_cfg.gm_auth_data.srv_address[1];
-	tcp.remote_ip[2] = global_cfg.gm_auth_data.srv_address[2];
-	tcp.remote_ip[3] = global_cfg.gm_auth_data.srv_address[3];
-
-	tcp.local_port = espconn_port();
-	
-	//TODO
-	espconn_send(&tcpconn, "", );
-	
+	if (0 == global_cfg.storedData) test_data_add();
+	INFO("start test_thinkspeak();")
+	os_timer_setfn(&ts_timer, ts_timer_cb, NULL);
+	os_timer_arm(&ts_timer, 5000, 1);
 }
-/******************************************************************************
- * FunctionName : test_config
- * Description  : Test routine for configuration file
- * Parameters   : none
- * Returns      : none
-*******************************************************************************/
-void test_config(void) {
-	INFO("Generating Test-Configuration File");
-	config_t test_cfg;	
-	config_t loaded_cfg;
 
-#if DBG_USE_TESTCONFIG
-  gm_Data_t test_data[3];
-  gm_APN_t apn_data;
-  gm_Srv_t srv_data;
+void ts_timer_cb(void) {
+	os_timer_disarm(&ts_timer);
 
-  srv_data.srv_address[0] = 172;
-  srv_data.srv_address[1] = 141;
-  srv_data.srv_address[2] = 1;
-  srv_data.srv_address[3] = 2;
-  srv_data.srv_port = 1337;
-
-  os_memcpy(srv_data.id, "GMID213\0",sizeof(srv_data.token));
-  os_memcpy(srv_data.token, "ABC-TOKEN\0",sizeof(srv_data.token));
-
-  test_data[0].timestamp = 0xDEADBEEF;
-  test_data[1].timestamp = 0xCAFEC0DE;
-  test_data[2].timestamp = 0xF000BAAA;
-
-	os_memcpy(apn_data.ssid,"MY_NEW_SSID\0",sizeof(apn_data.ssid));
-	os_memcpy(apn_data.pass,"MY_NEW_PASS\0",sizeof(apn_data.pass));
-
-	test_cfg.magic = CONFIG_MAGIC;	
-	test_cfg.version = CONFIG_VERSION;
-  test_cfg.random = 12345;
-  test_cfg.storedData = 0;
-
-	os_memcpy(test_cfg.gm_apn_data.pass,"MY_OLD_PASS\0",sizeof(test_cfg.gm_apn_data.pass));
-	os_memcpy(test_cfg.gm_apn_data.ssid,"MY_OLD_SSID\0",sizeof(test_cfg.gm_apn_data.ssid));
-
-	test_cfg.gm_auth_data.srv_address[0] = 192;
-	test_cfg.gm_auth_data.srv_address[1] = 168;
-	test_cfg.gm_auth_data.srv_address[2] = 10;
-	test_cfg.gm_auth_data.srv_address[3] = 11;
-	test_cfg.gm_auth_data.srv_port 	= 8080;
-
-	DBG_OUT("CFG:ERASE");
-	config_erase();
-	DBG_OUT("CFG:WRITE");
-	config_write(&test_cfg);
-	DBG_OUT("CFG:READ");
-	config_read(&loaded_cfg);
-	DBG_OUT("CFG:PRINT");
-	config_print(&loaded_cfg);	
-#endif
-
-  config_init();
-	test_cfg.magic = CONFIG_MAGIC;	
-	test_cfg.version = CONFIG_VERSION;
-  test_cfg.random = 12345;
-  test_cfg.storedData = 0;
-	config_write(&test_cfg);
-
-#if DBG_USE_TESTCONFIG
-  config_write_dataset(3,test_data);
-  config_write_apn(&apn_data);
-  config_write_srv(&srv_data);
-#endif
-
-  config_read(&loaded_cfg);
-  config_print(&loaded_cfg);
+	if (global_cfg.storedData > 0) {
+		user_ts_connect();
+		INFO("waiting.");
+		// Wait as long as connection is etablished or wating for message
+		while( user_ts_is_waiting() || user_ts_is_connected() ) os_printf('.');
+		os_printf("\r\n--- Waiting the 16 Secs ---\r\n");	
+		os_timer_arm(&ts_timer, USER_TS_TRANSMIT_INTERVAL, 1);
+		//system_deep_sleep(16*1000*1000); // uint32_t time in us 
+	} else {	
+		INFO("--- ALL DATA HAS BEEN SENT ---");
+		//os_printf("\r\n--- DEEP SLEEP ---\r\n");	
+		//system_deep_sleep(60*1000*10000); // uint32_t time in us 
+	}
 }
 
 
@@ -411,8 +357,10 @@ wifi_handle_event_cb(System_Event_t *evt)
 				IP2STR(&evt->event_info.got_ip.gw));
         
         // We are starting the SNTP Timer, because we got an IP Address
-        DBG_OUT("starting sntp client");
         user_sntp_start();
+				user_sntp_wait_valid_time();
+				
+				test_thinkspeak();
 		break;
 		case EVENT_SOFTAPMODE_STACONNECTED:
 			INFO("New Client: " MACSTR " joined, AID = %d",
