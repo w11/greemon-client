@@ -9,6 +9,7 @@
 #include "myConfig.h"
 #include "mem.h"
 #include "myNTP.h"
+#include "myGreemonStateMachine.h"
 
 LOCAL struct espconn user_tcp_conn;
 LOCAL struct _esp_tcp user_tcp;
@@ -30,6 +31,7 @@ bool ICACHE_FLASH_ATTR user_ts_is_waiting(void);
 struct espconn * ICACHE_FLASH_ATTR user_ts_get_pConnection(void);
 
 LOCAL void ICACHE_FLASH_ATTR user_tcp_connect_cb(void *arg);
+
 LOCAL void ICACHE_FLASH_ATTR user_tcp_discon_cb(void *arg);
 LOCAL void ICACHE_FLASH_ATTR user_tcp_recon_cb(void *arg, sint8 err);
 LOCAL void ICACHE_FLASH_ATTR user_tcp_recv_cb(void *arg, char *pusrdata, unsigned short length);

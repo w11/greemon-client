@@ -20,7 +20,7 @@
 #define TEST_STAPASS "scheka123"
 #define TEST_DEVICENAME "Greemon TestSuite"
 
-void ICACHE_FLASH_ATTR test_data_add(void);
+bool ICACHE_FLASH_ATTR test_data_add(void);
 void ICACHE_FLASH_ATTR test_config(void);
 void ICACHE_FLASH_ATTR test_connection_settings(void);
 

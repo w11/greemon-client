@@ -79,6 +79,7 @@ user_ts_connect() {
 	espconn_connect(&user_tcp_conn);
 }
 
+
 /******************************************************************************
  * FunctionName : user_tcp_connect_cb
  * Description  : A new incoming tcp connection has been connected.
@@ -88,25 +89,13 @@ user_ts_connect() {
 LOCAL void ICACHE_FLASH_ATTR
 user_tcp_connect_cb(void *arg)
 {
-	gm_Data_t* pData = NULL;
-	struct espconn *pespconn = arg;
-	uint8_t i;
-
+	struct espconn *pespconn = &user_tcp_conn;
 	INFO("--- CONNECTION ETABLISHED! ---\r\n");
 
 	espconn_regist_recvcb(pespconn, user_tcp_recv_cb);
 	espconn_regist_sentcb(pespconn, user_tcp_sent_cb);
 	espconn_regist_disconcb(pespconn, user_tcp_discon_cb);
-
-	connected = true;
-	pData = config_pop_data(&global_cfg);
-
-	if (NULL == pData) {
-		espconn_disconnect(&user_tcp_conn);
-		ERR_OUT("nothing to send");
-		return;
-	}
-	user_ts_send_data(pData);
+	gm_state_set(_STATE_CONNECTION_OPEN);
 }
 
 /******************************************************************************
@@ -120,6 +109,7 @@ user_tcp_discon_cb(void *arg)
 {
 	INFO("tcp disconnect succeed !!! \r\n");
 	connected = false;
+	gm_state_set(_STATE_CONNECTION_TRANSMITTED);
 }
 
 /******************************************************************************

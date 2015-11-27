@@ -23,7 +23,7 @@ LOCAL os_timer_t user_timer_sntp;
 
 uint32_t ICACHE_FLASH_ATTR user_sntp_latest_timestamp(void);
 bool ICACHE_FLASH_ATTR user_ntp_test(void);
-void ICACHE_FLASH_ATTR user_sntp_wait_valid_time(void);
+bool ICACHE_FLASH_ATTR user_sntp_wait_valid_time(void);
 uint32_t ICACHE_FLASH_ATTR user_sntp_latest_timestamp(void); 
 void ICACHE_FLASH_ATTR user_sntp_timer_callback(void);
 void ICACHE_FLASH_ATTR user_sntp_start(void);

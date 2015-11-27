@@ -7,6 +7,8 @@
 
 	INITIAL DOCUMENT: 2015-08-19 19:18
 */
+#include "myGreemonStateMachine.h"
+
 #include "myDHT22.h"
 #include "myBH1750.h"
 
@@ -36,25 +38,7 @@
 #define BH1750_PIN_SDA 2
 #define BH1750_PIN_SCL 14
 
-typedef enum greemon_state {
-	_STATE_INITIAL = 0,
-	_STATE_STARTUP = 1,
-	_STATE_WAKEUP,
-	_STATE_LOAD_CONFIG,
-	_STETE_CONFIG_INITIAL,
-	_STATE_CONFIG_LOADED,
-	_STATE_START_WEBSERVER,
-	_STATE_WEBSERVER_RUNNING,
-	_STATE_WEBSERVER_STOPPED,
-	_STATE_READ_SENSOR_VALUES,
-	_STATE_RECIEVED_SENSOR_VALUES,
-	_STATE_WIFI_SCAN_RUNNING,
-	_STATE_WIFI_SCAN_FINISHED,
-	_STATE_DEEP_SLEEP,
-	_STATE_RESTART,
-	_STATE_IN_ERROR,
-	_STATE_IDLE,
-} greemon_state_t;
+
 
 LOCAL bool WifiScanComplete = false;
 LOCAL bool init_done = false;
@@ -71,39 +55,6 @@ void enable_reset_interrupt(void);
 
 void user_set_softap_config_default(void);
 void user_wifi_connect_ap(config_t* g);
-void ts_timer_cb(void);
-
-/******************************************************************************
- * FunctionName : test_thinkspeak
- * Description  : Test routine for thinkpeak file
- * Parameters   : none
- * Returns      : none
-*******************************************************************************/
-void test_thinkspeak(void) {
-	if (0 == global_cfg.storedData) test_data_add();
-	INFO("start test_thinkspeak();")
-	os_timer_setfn(&ts_timer, ts_timer_cb, NULL);
-	os_timer_arm(&ts_timer, 5000, 1);
-}
-
-void ts_timer_cb(void) {
-	os_timer_disarm(&ts_timer);
-
-	if (global_cfg.storedData > 0) {
-		user_ts_connect();
-		INFO("waiting.");
-		// Wait as long as connection is etablished or wating for message
-		while( user_ts_is_waiting() || user_ts_is_connected() ) os_printf('.');
-		os_printf("\r\n--- Waiting the 16 Secs ---\r\n");	
-		os_timer_arm(&ts_timer, USER_TS_TRANSMIT_INTERVAL, 1);
-		//system_deep_sleep(16*1000*1000); // uint32_t time in us 
-	} else {	
-		INFO("--- ALL DATA HAS BEEN SENT ---");
-		//os_printf("\r\n--- DEEP SLEEP ---\r\n");	
-		//system_deep_sleep(60*1000*10000); // uint32_t time in us 
-	}
-}
-
 
 void i2ctest(){
 	DBG_OUT("=== READ BH1750 ===");
@@ -212,7 +163,6 @@ wifi_scan_done(void *arg, STATUS status)
   {
      os_printf("scan fail !!!\r\n");
   }
-
 }
 
 /******************************************************************************
@@ -245,13 +195,17 @@ uint16_t earthprobe_adc_read(void) {
 	return adcValue;
 } // End of user_init
 
-/******************************************************************************
- * FunctionName : 
- * Description  : 
- * Parameters   : 
- * Returns      : 
-*******************************************************************************/
-void user_rf_pre_init(void) { }
+
+
+
+
+
+
+/* ==================================================================================================
+* ABOVE LINES HAVE TO BE DELETED, 
+* THEY ARE TEMPORALY
+* ==================================================================================================*/
+
 
 /******************************************************************************
  * FunctionName : 
@@ -259,69 +213,44 @@ void user_rf_pre_init(void) { }
  * Parameters   : 
  * Returns      : 
 *******************************************************************************/
-void system_init_done(void){
-	
-	INFO("system starting up");
-	system_get_flash_size_map();
+bool ICACHE_FLASH_ATTR
+gm_server_connect()
+{
+	gm_Data_t* pData = NULL;
 
-	// Register interrupt handler
-	ETS_GPIO_INTR_ATTACH(intr_handle_cb, NULL);
-	enable_reset_interrupt();
-	
-  switch (config_init())
-  {
-    case CONFIG_INITIAL:
-      INFO("generated initial configuration");
-			INFO("loading default ap settings");
-			user_set_softap_config_default();
-			DBG_OUT("starting webserver");
-			webserver_init(HTTP_PORT);
-    break;
-    case CONFIG_MAGIC_FOUND:
-      INFO("configuration loaded");
-			config_print(&global_cfg);
-			// search for ap name in config
-			// connect if found
-			// else try again after a few seconds
-			// startup webconfig if not connected
-			// Load SSID and Pass
-			user_wifi_connect_ap(&global_cfg);
-			//INFO("scanning available access points");
-			//wifi_station_ap_number_set(20);
-			//wifi scan has to after system init done.
-			//wifi_scan();
-    break;
-  }
-	init_done = true;
-  //DHT22_init();
-	//os_timer_setfn(&timerDHT, DHT_timerCallback, NULL);
-	//os_timer_arm(&timerDHT, 5000, 1);
+	pData = config_pop_data(&global_cfg);	
 
-	//DBG_OUT("INIT: BH1750 initialization");
-	//os_timer_setfn(&i2ctest_timer, i2ctest, NULL);
-	//os_timer_arm(&i2ctest_timer, 20000, 1);
+	if (NULL == pData) {
+		espconn_disconnect(&user_tcp_conn);
+		ERR_OUT("nothing to send");
+		return false;
+	} else {
+		user_ts_connect();
+		return true;
+	}
 }
 
 /******************************************************************************
- * FunctionName : wifi_ipv4_setDefault
- * Description  : Sets the default values for the DHCP Server
- * Parameters   : none
- * Returns      : none
+ * FunctionName : 
+ * Description  : 
+ * Parameters   : 
+ * Returns      : 
 *******************************************************************************/
-void wifi_ipv4_setDefault(void){
-	struct ip_info info;
+bool ICACHE_FLASH_ATTR 
+gm_server_send_data()
+{
+	gm_Data_t* pData = NULL;
 
-	wifi_softap_dhcps_stop();
+	pData = config_pop_data(&global_cfg);	
 
-	IP4_ADDR(&info.ip, 192, 168, 5, 1);
-	IP4_ADDR(&info.gw, 192, 168, 5, 1);
-	IP4_ADDR(&info.netmask, 255, 255, 255, 0);
+	if (NULL == pData) {
+		espconn_disconnect(&user_tcp_conn);
+		ERR_OUT("nothing to send");
+	}
 
-	wifi_set_ip_info(SOFTAP_IF, &info);
-
-	wifi_softap_dhcps_start();
+	user_ts_send_data(pData);
+	return true;
 }
-
 
 /******************************************************************************
  * FunctionName : wifi_handle_event_cb
@@ -332,10 +261,10 @@ void wifi_ipv4_setDefault(void){
 void ICACHE_FLASH_ATTR
 wifi_handle_event_cb(System_Event_t *evt)
 {
-	DBG_OUT(">>WiFi Event: %x", evt->event);
+	INFO("wifi-handler event: %x", evt->event);
 	switch (evt->event) {
 		case EVENT_STAMODE_CONNECTED:
-			INFO("Greemon: Connect to SSID %s. Channel: %d",
+			INFO("Greemon: Connected to SSID %s. Channel: %d",
 				evt->event_info.connected.ssid,
 				evt->event_info.connected.channel);
 		break;
@@ -343,6 +272,7 @@ wifi_handle_event_cb(System_Event_t *evt)
 			INFO("Greemon: Disconnected from SSID %s. Reason: %d",
 				evt->event_info.disconnected.ssid,
 				evt->event_info.disconnected.reason);
+				gm_state_set(_STATE_STARTUP);
 		break;
 		case EVENT_STAMODE_AUTHMODE_CHANGE:
 			INFO("Greemon: Changed Authmode %d -> %d",
@@ -355,12 +285,7 @@ wifi_handle_event_cb(System_Event_t *evt)
 				IP2STR(&evt->event_info.got_ip.ip),
 				IP2STR(&evt->event_info.got_ip.mask),
 				IP2STR(&evt->event_info.got_ip.gw));
-        
-        // We are starting the SNTP Timer, because we got an IP Address
-        user_sntp_start();
-				user_sntp_wait_valid_time();
-				
-				test_thinkspeak();
+				gm_state_set(_STATE_WIFI_CONNECTED);
 		break;
 		case EVENT_SOFTAPMODE_STACONNECTED:
 			INFO("New Client: " MACSTR " joined, AID = %d",
@@ -377,6 +302,22 @@ wifi_handle_event_cb(System_Event_t *evt)
 		break;
 		default:
 		break;
+	}
+}
+
+/******************************************************************************
+ * FunctionName : user_sntp_start
+ * Description  : start the sntp client
+ * Parameters   : none
+ * Returns      : startup status
+*******************************************************************************/
+bool ICACHE_FLASH_ATTR
+gm_sntp_start() {
+	user_sntp_start();
+	if (!user_sntp_wait_valid_time())
+	{
+		ERR_OUT("unvalid time");
+		return false;
 	}
 }
 
@@ -404,19 +345,78 @@ user_wifi_connect_ap(config_t* g)
 }
 
 /******************************************************************************
- * FunctionName : ser_set_softap_config_default
- * Description  : set SSID and password of ESP8266 softAP
+ * FunctionName : gm_connect_ap
+ * Description  : load station config with the given values and connect to ap
+ * Parameters   : g: configuration struct
+ * Returns      : none
+*******************************************************************************/
+bool ICACHE_FLASH_ATTR
+gm_connect_ap()
+{
+	user_wifi_connect_ap(&global_cfg);
+	return true;
+}
+
+
+/******************************************************************************
+ * FunctionName : gm_read_sensors
+ * Description  : wrapper function for reading sensor values
+ * Parameters   : none
+ * Returns      : returns whether the sensor data has been saved or not
+*******************************************************************************/
+bool ICACHE_FLASH_ATTR 
+gm_read_sensors() {
+	if (0 == global_cfg.storedData) 
+	{
+		return test_data_add();
+	} else {
+		return true;
+	}
+}
+
+
+/******************************************************************************
+ * FunctionName : gm_webserver_start()
+ * Description  : wrapper function for starting the webserver
+ * Parameters   : returns whether the server has been started or not
+ * Returns      : none
+*******************************************************************************/
+bool ICACHE_FLASH_ATTR 
+gm_webserver_stop() {
+	webserver_stop();
+	return true;
+}
+
+/******************************************************************************
+ * FunctionName : gm_webserver_start()
+ * Description  : wrapper function for starting the webserver
+ * Parameters   : returns whether the server has been started or not
+ * Returns      : none
+*******************************************************************************/
+bool ICACHE_FLASH_ATTR 
+gm_webserver_start() {
+	if (ESPCONN_OK ==	webserver_init(HTTP_PORT)) 
+	{
+		return true;
+	} else {
+		// TODO: Error Handling
+		return false;
+	}
+}
+
+/******************************************************************************
+ * FunctionName : gm_default_wifi_settings
+ * Description  : set default SSID and password of ESP8266 softAP
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
 void ICACHE_FLASH_ATTR
-user_set_softap_config_default(void)
+gm_default_wifi_settings(void)
 {
 	struct softap_config config;
+	struct ip_info info;
 
 	wifi_softap_get_config(&config); // Get config first.
-
-	//TODO: LOAD Config from Flash Memory. 
 	os_memset(config.ssid, 0, 32);
 	os_memset(config.password, 0, 64);
 	os_memcpy(config.ssid, "Greemon_default", 15);
@@ -426,10 +426,15 @@ user_set_softap_config_default(void)
 
 	// how many stations can connect to ESP8266 softAP
 	config.max_connection = HTTP_CONNECTION_MAX; 
-	
-	wifi_softap_set_config(&config);// Set ESP8266 softap config .
-	
-	wifi_ipv4_setDefault();
+	wifi_softap_set_config(&config);
+
+	// DHCP SERVER SETTINGS
+	wifi_softap_dhcps_stop();
+	IP4_ADDR(&info.ip, 192, 168, 5, 1);
+	IP4_ADDR(&info.gw, 192, 168, 5, 1);
+	IP4_ADDR(&info.netmask, 255, 255, 255, 0);
+	wifi_set_ip_info(SOFTAP_IF, &info);
+	wifi_softap_dhcps_start();
 }
 
 /*****************************************************************************
@@ -442,24 +447,16 @@ user_set_softap_config_default(void)
  *****************************************************************************/
 void intr_handle_cb(void){
 	uint8_t i = 0;
-
 	// Save current value for status register
 	volatile uint32_t gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);	
-
 	//Disable Interrup
   ETS_GPIO_INTR_DISABLE();
-	
 	// Clear status in interrupt register
 	GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status & BIT(0));	
-	
-
 	DBG_OUT("Interrupt detected.");
-	
 	// Count how long the button is pressed
 	DBG_OUT("RESET - Detected reset");
   config_erase();
-
-  // Reenable interrupt
   ETS_GPIO_INTR_ENABLE();
 }
 
@@ -483,20 +480,92 @@ void enable_reset_interrupt(){
     	//enable interrupt
     	gpio_pin_intr_state_set(GPIO_ID_PIN(0), GPIO_PIN_INTR_NEGEDGE);
     	ETS_GPIO_INTR_ENABLE();
-	INFO("interrupt enabled");
+	INFO("reset interrupt enabled");
 }
 
 /******************************************************************************
+ * FunctionName : gm_load_config
+ * Description  : 
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+bool gm_load_config(){
+	// Load configuration
+	INFO("loading flash data");
+  switch (config_init())
+  {
+    case CONFIG_INITIAL:
+			INFO("loading default configuration");
+			gm_default_wifi_settings();
+			gm_state_set(_STATE_CONFIG_DEFAULT);
+    break;
+    case CONFIG_MAGIC_FOUND:
+			INFO("loaded user configuration");
+			config_print(&global_cfg);
+			gm_state_set(_STATE_CONFIG_USER);
+    break;
+  }
+	return true;
+}
+
+/******************************************************************************
+ * FunctionName : gm_init
+ * Description  : 
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+bool gm_init(){
+	// Register interrupt handler
+	ETS_GPIO_INTR_ATTACH(intr_handle_cb, NULL);
+	enable_reset_interrupt();
+	gm_state_set(_STATE_INITIALIZED);
+	return true;
+}
+
+/******************************************************************************
+ * FunctionName : system_init_done
+ * Description  : Callback function
+ *								Fired after LWIP finished initialising
+ *								Now we can init our system
+ * Parameters   : none
+ * Returns      : none
+*******************************************************************************/
+void system_init_done(void){
+	gm_state_set(_STATE_INIT);
+}
+
+/******************************************************************************
+ * FunctionName : gm_startup
+ * Description  : Initialize UART, 
+ * 								Register Callback for lwip
+ * 								set wifi handler
+ * 								do not connect to wifi at this point
+ * Parameters   : none
+ * Returns      : startup finished
+*******************************************************************************/
+bool gm_startup(){
+		uart_init(BIT_RATE_115200, BIT_RATE_115200);
+		system_init_done_cb(system_init_done);
+		wifi_station_set_auto_connect(false);
+		wifi_set_event_handler_cb(wifi_handle_event_cb);
+		return true;
+}
+
+/******************************************************************************
+ * FunctionName : ask Espressif why this is needed.
+ * Description  : Should be used for rf settings
+ * Parameters   : 
+ * Returns      : 
+*******************************************************************************/
+void user_rf_pre_init(void) { }
+
+/******************************************************************************
  * FunctionName : user_init
- * Description  : Entry point for the esp program. Provides initialization.
+ * Description  : Entry point for the esp.
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
 void user_init(void) {
-	system_init_done_cb(system_init_done);
-	wifi_station_set_auto_connect(false);
-	uart_init(BIT_RATE_115200, BIT_RATE_115200);
-	wifi_set_event_handler_cb(wifi_handle_event_cb);
-	INFO("waiting for wifi to start..")
+	gm_state_set(_STATE_STARTUP);
 } // End of user_init
 

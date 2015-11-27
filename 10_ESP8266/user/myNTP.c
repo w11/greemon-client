@@ -3,6 +3,7 @@
 uint8_t user_ntp_tries = 0;
 uint32_t user_ntp_timestamp = 0;
 
+
 /******************************************************************************
  * FunctionName : user_ntp_test
  * Description  : testcase
@@ -23,14 +24,21 @@ bool ICACHE_FLASH_ATTR user_ntp_test(void) {
  * FunctionName : user_sntp_latest_timestamp
  * Description  : 
  * Parameters   : none
- * Returns      : the timestamp
+ * Returns      : time is valid
 *******************************************************************************/
-void ICACHE_FLASH_ATTR user_sntp_wait_valid_time(void){
+bool ICACHE_FLASH_ATTR user_sntp_wait_valid_time(void){
 	INFO("waiting for valid time");
-	while (!user_sntp_valid()) {
-		os_printf('.');
-		os_delay_us(10000);
+	while ( !user_sntp_valid() ) 
+	{
+		if (user_ntp_tries > USER_NTP_MAX_TRIES) 
+		{
+			os_printf('.');
+			os_delay_us(10000);
+		} else {
+			return false;
+		}
 	}
+	return true;
 }
 
 /******************************************************************************
