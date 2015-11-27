@@ -1,5 +1,8 @@
 #include "myNTP.h"
 
+uint8_t user_ntp_tries = 0;
+uint32_t user_ntp_timestamp = 0;
+
 /******************************************************************************
  * FunctionName : user_ntp_test
  * Description  : testcase
@@ -17,6 +20,44 @@ bool ICACHE_FLASH_ATTR user_ntp_test(void) {
 }
 
 /******************************************************************************
+ * FunctionName : user_sntp_latest_timestamp
+ * Description  : 
+ * Parameters   : none
+ * Returns      : the timestamp
+*******************************************************************************/
+void ICACHE_FLASH_ATTR user_sntp_wait_valid_time(void){
+	INFO("waiting for valid time");
+	while (!user_sntp_valid()) {
+		os_printf('.');
+		os_delay_us(10000);
+	}
+}
+
+/******************************************************************************
+ * FunctionName : user_sntp_latest_timestamp
+ * Description  : 
+ * Parameters   : none
+ * Returns      : the timestamp
+*******************************************************************************/
+uint32_t ICACHE_FLASH_ATTR user_sntp_latest_timestamp(void) {
+	return sntp_get_current_timestamp();
+}
+
+/******************************************************************************
+ * FunctionName : user_sntp_valid
+ * Description  : 
+ * Parameters   : none
+ * Returns      : true - if theres a valid time
+*******************************************************************************/
+bool ICACHE_FLASH_ATTR user_sntp_valid(void){
+	if ( 0 == user_ntp_timestamp) {
+	 return true;
+	} else {
+		return false;
+	}
+}
+
+/******************************************************************************
  * FunctionName : user_sntp_timer_callback
  * Description  : checks if the sntp client has recieved a value
  * Parameters   : none
@@ -28,8 +69,6 @@ user_sntp_timer_callback(void){
   // Timer callback for sntp client
   // Check for time
   user_ntp_timestamp = sntp_get_current_timestamp();
-  user_ntp_valid_time = false;
-  user_ntp_tries = 0;
 
   if (0 == user_ntp_timestamp)
   {
@@ -47,7 +86,6 @@ user_sntp_timer_callback(void){
   } else {
     // timestamp recieved
     DBG_OUT("successfully recieved time from ntp server");
-    user_ntp_valid_time = true;
     user_ntp_tries = 0;
     os_timer_disarm(&user_timer_sntp);
   }
@@ -59,8 +97,9 @@ user_sntp_timer_callback(void){
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
-bool ICACHE_FLASH_ATTR 
+void ICACHE_FLASH_ATTR 
 user_sntp_start(void) {
+	INFO("starting sntp client");
   user_ntp_tries = 0;
   // Set the Server-Names of the NTP Server
 	DBG_OUT("set ntp server names");
