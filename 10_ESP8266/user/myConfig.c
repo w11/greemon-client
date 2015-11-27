@@ -19,6 +19,8 @@ uint16_t getConfigSize(void){
 void ICACHE_FLASH_ATTR
 config_print(config_t* config){
 #ifdef DEV_VERSION
+	char timestamp[50];
+		
   uint8_t i;
 	DBG_OUT("========= GREEMON ==========");
   DBG_OUT("CONF: \t%d Bytes", sizeof(*config));
@@ -45,7 +47,8 @@ config_print(config_t* config){
 	DBG_OUT("======= CONFIG END =========");
 	DBG_OUT("====== SAVED VALUES ========");
 	for (i = 0; i<=config->storedData-1; i++){
-	  DBG_OUT("TIME: \t%x", config->gm_data[i].timestamp );
+		os_sprintf(timestamp, epoch_to_str(config->gm_data[i].timestamp));		
+	  DBG_OUT("TIME: \t%s", timestamp );
 	  DBG_OUT("MOIST:\t%d.%d", 
 	      (uint8_t) ((0x0F & config->gm_data[i].dht22_moisture) >> 8), 
 	      (uint8_t) (0xF0 & config->gm_data[i].dht22_moisture));
@@ -116,8 +119,6 @@ config_read(config_t* config)
 	} else {
 		INFO("(!) read failed");
 	}
-	DBG_OUT("SIZE OF CONFIG after load: ", sizeof(config));
-
   ETS_GPIO_INTR_ENABLE();
   return r; 
 }
@@ -265,38 +266,80 @@ config_write_srv(gm_Srv_t* srv_data){
  * Returns      : bool
  ********************************************************************************/
 bool ICACHE_FLASH_ATTR
-config_write_dataset(uint8_t len, gm_Data_t* data){
+config_write_dataset(config_t* pConfig, uint8_t len, gm_Data_t* data){
 	INFO("writing datasets to config");
 	uint8_t i = 0;
 
-	config_read(&global_cfg);
-  DBG_OUT("number of data: %d", global_cfg.storedData);
+	config_read(pConfig);
+  DBG_OUT("number of data before: %d", pConfig->storedData);
 
-  if ( (global_cfg.storedData + len) >= CONFIG_MAX_DATASETS){
+	for (i=0; i < len; i++) config_push_data(pConfig, &data[i]);
+		
+	DBG_OUT("number of data after: %d", pConfig->storedData);
 
-    ERR_OUT("cannot write, full");
-    return false;
-
-  } else {
-
-  	global_cfg.storedData = global_cfg.storedData + len;
-		for (i=0; i < len; i++) {
-    // old_config->gm_data[i].timestamp = data[i].timestamp;
-
-			os_memcpy(global_cfg.gm_data[i], data[i], sizeof(gm_Data_t));
-
-  	}
-		if (SPI_FLASH_RESULT_OK == config_save(&global_cfg))
-		{
-			INFO("success");
-			return true;
-		} else {
-			ERR_OUT("An error occured");
-			return false;
-		} 
-
+	if (SPI_FLASH_RESULT_OK == config_save(pConfig))
+	{
+		INFO("flash write success");
+		return true;
+	} else {
+		ERR_OUT("An error occured");
+		return false;
 	} 
 
+}
+
+/********************************************************************************
+ * FunctionName : config_push_data
+ * Description  : 
+ * Parameters   : 
+ *								
+ * Returns      : bool
+ ********************************************************************************/
+bool ICACHE_FLASH_ATTR
+config_push_data(config_t* pConfig, gm_Data_t* data){
+	INFO("adding data to config");
+	DBG_OUT("current data in storage: %d", pConfig->storedData);
+
+  if ( CONFIG_MAX_DATASETS == (pConfig->storedData) )
+	{
+    ERR_OUT("cannot write, full");
+    return false;
+  } else {
+		DBG_OUT("PUSH Data[%d]",pConfig->storedData);
+		os_memcpy(pConfig->gm_data+(pConfig->storedData), data, sizeof(gm_Data_t));
+		pConfig->storedData = pConfig->storedData + 1;
+		DBG_OUT("data now: %u", pConfig->storedData);
+		INFO("remember to save it");
+		return true;
+	} 
+}
+
+/********************************************************************************
+ * FunctionName : config_pop_data
+ * Description  : 
+ * Parameters   : 
+ *								
+ * Returns      : gm_Data_t*
+ ********************************************************************************/
+gm_Data_t* ICACHE_FLASH_ATTR
+config_pop_data(config_t* pConfig){
+	gm_Data_t * pData = NULL;
+
+	INFO("POP Data[%d]", pConfig->storedData-1);
+
+	if ( 0 == pConfig->storedData ) return NULL;
+
+	pData = &global_cfg.gm_data[pConfig->storedData-1];
+
+	if (NULL == pData) {
+		ERR_OUT("empty data storage");
+	} else {
+		INFO("returning pointer: %x for position: %u", pData, pConfig->storedData-1);
+		pConfig->storedData = pConfig->storedData-1;
+		DBG_OUT("data left in storage: %u", pConfig->storedData)
+	}
+
+	return pData; 
 }
 
 /******************************************************************************
@@ -339,6 +382,7 @@ config_init() {
     DBG_OUT("Config magic not found. Creating new configuration file");
     global_cfg.magic = CONFIG_MAGIC_RESET;
     global_cfg.version = CONFIG_VERSION;
+
     global_cfg.storedData = 0;
 
 		DBG_OUT("Saving Random");

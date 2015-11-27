@@ -13,7 +13,7 @@
 #define CONFIG_MAGIC 0xCAFEC0DE
 #define CONFIG_MAGIC_RESET 0xDEADBEEF
 #define CONFIG_VERSION 1
-#define CONFIG_MAX_DATASETS 3
+#define CONFIG_MAX_DATASETS 15
 
 #define CONFIG_SIZE_SSID 32 //TODO check for size 
 #define CONFIG_SIZE_TKN 32
@@ -69,7 +69,7 @@ typedef struct {
 	uint32_t  	magic;  		            // INITIAL: CONFIG_MAGIC_RESET
 	uint16_t 		version;                // version of the configuration file
 	uint32_t 		random;                 // Random number, used for validation
-	uint8_t     storedData;             // number of stored values
+	int16_t     storedData;             // number of stored values
 	gm_Base_t		gm_base_data;
 	gm_Srv_t    gm_auth_data;
 	gm_APN_t    gm_apn_data;
@@ -87,7 +87,11 @@ SpiFlashOpResult ICACHE_FLASH_ATTR config_erase(void);
 SpiFlashOpResult ICACHE_FLASH_ATTR config_save(config_t* unsaved_config);
 bool ICACHE_FLASH_ATTR config_write_apn(gm_APN_t* apn);
 bool ICACHE_FLASH_ATTR config_write_srv(gm_Srv_t* srv_data);
-bool ICACHE_FLASH_ATTR config_write_dataset(uint8_t len, gm_Data_t* data);
+bool ICACHE_FLASH_ATTR config_write_dataset(config_t* pConfig, uint8_t len, gm_Data_t* data);
+
+bool ICACHE_FLASH_ATTR config_push_data(config_t* pConfig, gm_Data_t* data);
+gm_Data_t* ICACHE_FLASH_ATTR config_pop_data(config_t* pConfig);
+
 config_error_t ICACHE_FLASH_ATTR config_init();
 
 #endif
