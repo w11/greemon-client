@@ -376,6 +376,11 @@ webserver_parse_post_content(char *pusrdata, unsigned short *pLength)
 			} else if (0 == os_strncmp(pKeyValuePair[pos],"ssid=",5)) {
 				//DBG_OUT("Found ssid: %s",pKeyValuePair[pos]+5);
 				os_memcpy(APN_data.ssid,pKeyValuePair[pos]+5,CONFIG_SIZE_SSID);
+				uint8_t j=0;
+				for (j=0; j < os_strlen(APN_data.ssid); j++)
+				{
+					if ('+' == APN_data.ssid[j]) APN_data.ssid[j] = ' ';
+				}
 
 			} else if (0 == os_strncmp(pKeyValuePair[pos],"token=",6)) {
 				//DBG_OUT("Found token: %s",pKeyValuePair[pos]+6);
