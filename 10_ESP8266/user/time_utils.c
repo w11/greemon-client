@@ -11,10 +11,10 @@
 #define SEC_IN_LEAP (86400*366)
 #define SEC_IN_YEAR(year) (IS_LEAP(year) ? SEC_IN_LEAP : SEC_IN_NON_LEAP)
 
-char buf[30];
+char buf[50];
 
-unsigned char calendar [] = {31, 28, 31, 30,31, 30, 31, 31,30, 31, 30, 31};
-unsigned char calendar_leap [] = {31, 29, 31, 30,31, 30, 31, 31,30, 31, 30, 31};
+unsigned char calendar [] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+unsigned char calendar_leap [] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 unsigned char *get_calendar(int year) {
         return IS_LEAP(year) ? calendar_leap : calendar;
@@ -39,7 +39,7 @@ int get_month(unsigned long *t, int year) {
         return i+1;
 }
 
-char *epoch_to_str(unsigned long epoch) {
+char* epoch_to_str(unsigned long epoch) {
    int year=get_year(&epoch);
    unsigned char month=get_month(&epoch,year);
    unsigned char day=1+(epoch/86400);
@@ -48,7 +48,6 @@ char *epoch_to_str(unsigned long epoch) {
    epoch%=3600;
    unsigned char min=epoch/60;
    unsigned char sec=epoch%60;
-
-   os_sprintf(buf,"%02d:%02d:%02d %02d/%02d/%02d",hour,min,sec,day,month,year);
+	 os_sprintf(buf,"%04d-%02d-%02d %02d:%02d:%02d\0",year, month, day, hour, min, sec);
    return buf;
 }
