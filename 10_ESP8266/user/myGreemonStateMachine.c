@@ -147,6 +147,12 @@ gm_state_run(greemon_state_t gm_run_state){
 		 */
 			INFO("webserver running");
 			INFO("waiting for HTTP requests");
+
+// TEST FOR BH1750
+//TODO: DELETEME
+			i2ctest();	
+
+
 		break;
 
 // --------------------------------------------------------------------------
@@ -219,6 +225,7 @@ gm_state_run(greemon_state_t gm_run_state){
 
 		case (_STATE_DEEP_SLEEP):
 			INFO("Finished work. Deep sleep, yay.");
+			system_deep_sleep(10*1000*1000); // uint32_t time in us 
 		break;
 
 // --------------------------------------------------------------------------

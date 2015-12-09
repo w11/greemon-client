@@ -2,15 +2,6 @@
 #define __USER_CONFIG_H__
 
 #define DEV_OUTPUT_ENABLE
-
-#define SSID "Julia"
-#define SSID_PASSWORD "scheka123"
-
-
-//#define FLASH_1M
-//#define FLASH_2M
-//#define FLASH_4M
-//#define FLASH_AUTOSIZE
 #define FULL_VERSION
 #define DEV_VERSION
 

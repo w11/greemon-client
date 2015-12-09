@@ -62,7 +62,7 @@ typedef struct {
 typedef struct {
 	// CLIENT IDENTIFIER
 	uint8_t 		name[32];								// name of the device
-	uint32_t 		deep_sleep_us;					// in us		
+	uint32_t 		deep_sleep_us;					// in us. Currently not used. TODO: Replace #define with this value, when the config has been loaded.		
 } gm_Base_t;
 
 typedef struct {
