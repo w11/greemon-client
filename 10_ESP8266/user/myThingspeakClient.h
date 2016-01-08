@@ -23,7 +23,7 @@ ip_addr_t tcp_server_ip;
 
 
 void ICACHE_FLASH_ATTR user_ts_connect();
-void ICACHE_FLASH_ATTR user_ts_send_data(gm_Data_t* pData);
+bool ICACHE_FLASH_ATTR user_ts_send_data(gm_Data_t* pData);
 
 bool ICACHE_FLASH_ATTR user_ts_is_connected(void);
 bool ICACHE_FLASH_ATTR user_ts_is_waiting(void);

@@ -33,12 +33,18 @@
 
 bool myBH1750_Init(uint8_t sda, uint8_t scl);
 bool myBH1750_Start(void);
-uint8_t myBH1750_SendRequest(uint8_t requestMode);
-uint8_t myBH1750_ReadValue(void);
+bool myBH1750_SendRequest(uint8_t requestMode);
+bool myBH1750_ReadValue(void);
+uint16_t myBH1750_getValue(void);
 
 LOCAL uint16 lastReadValue = 0;
 
 #endif
+
+uint16_t myBH1750_getValue(void){
+	return lastReadValue;
+}
+
 
 bool myBH1750_Init(uint8_t sda, uint8_t scl){
 	return i2c_master_gpio_init(sda, scl);
@@ -95,7 +101,7 @@ bool myBH1750_Start(void){
 	return true;
 }
 
-uint8_t myBH1750_SendRequest(uint8_t requestMode)
+bool myBH1750_SendRequest(uint8_t requestMode)
 {
 	os_printf("READ_FUNC\r\n");
 /*
@@ -129,10 +135,10 @@ uint8_t myBH1750_SendRequest(uint8_t requestMode)
 	}
 	// STOP
 	i2c_master_stop();
-	return 0;
+	return true;
 }
 
-uint8_t myBH1750_ReadValue(void){
+bool myBH1750_ReadValue(void){
 
 	LOCAL uint8_t readValHigh = 0;
 	LOCAL uint8_t readValLow  = 0;
@@ -168,11 +174,13 @@ uint8_t myBH1750_ReadValue(void){
 	i2c_master_send_nack();
 
 	i2c_master_stop();
-	os_printf("%x",readValHigh);
-	os_printf("%x",readValLow);
-	os_printf("\r\n");
+	DBG_OUT("%x",readValHigh);
+	DBG_OUT("%x",readValLow);
 
-	return 0; //TODO IMPLEMENT ERROR CODES
+	lastReadValue = readValHigh << 8 + readValLow;
+	
+
+	return true; //TODO IMPLEMENT ERROR CODES
 }
 
 

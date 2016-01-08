@@ -1,6 +1,6 @@
 #include "myGreemonStateMachine.h"
 
-#define GM_SERVER_TRANSMIT_INTERVAL (16000)
+#define GM_SERVER_TRANSMIT_INTERVAL (16*1000)
 
 LOCAL greemon_state_t gm_in_state = _STATE_STARTUP;
 LOCAL gm_error_counter = 0;
@@ -91,7 +91,7 @@ gm_state_run(greemon_state_t gm_run_state){
 		/* 
 		 * this state only happens if there was an error
 		 */
-			INFO("Wooooooops... there was an errrrrrror. Harr, Pirate..");
+			INFO("Wooooooops... there was an ERROR.");
 			INFO("restart is the only exit")
 		break;
 
@@ -111,6 +111,7 @@ gm_state_run(greemon_state_t gm_run_state){
 		 *	we start with the user configuration
 		 *	but first read sensor data
 		 */
+			INFO("user config has been loaded");
 			if ( !gm_read_sensors() ) gm_state_set(_STATE_ERROR);
 			gm_state_set(_STATE_SENSOR_DATA_SAVED);
 		break;
@@ -130,7 +131,7 @@ gm_state_run(greemon_state_t gm_run_state){
 // --------------------------------------------------------------------------
 
 		case (_STATE_CONFIG_RECIEVED):
-			
+		INFO("config recieved - please restart the controller");
 		break;
 
 // --------------------------------------------------------------------------
@@ -150,7 +151,7 @@ gm_state_run(greemon_state_t gm_run_state){
 
 // TEST FOR BH1750
 //TODO: DELETEME
-			i2ctest();	
+//		i2ctest();	
 
 
 		break;
@@ -159,9 +160,11 @@ gm_state_run(greemon_state_t gm_run_state){
 
 		case (_STATE_SAVED_CONFIGURATION):
 			INFO("configuration has been saved");
+			wifi_station_disconnect();
 			gm_webserver_stop();
 			INFO("restarting");
 			system_restart();
+			while(1) os_delay_us(100);
 		break;
 
 // --------------------------------------------------------------------------
@@ -186,6 +189,7 @@ gm_state_run(greemon_state_t gm_run_state){
 		 * Starting SNTP Client
 		 */
 			if ( !gm_sntp_start() ) gm_state_set(_STATE_ERROR);
+			user_sntp_wait_valid_time();
 			INFO("recieved time from server");
 			// NEXT STATE ->_STATE_TIME_RECIEVED
 			gm_state_set(_STATE_TIME_RECIEVED);
@@ -215,7 +219,7 @@ gm_state_run(greemon_state_t gm_run_state){
 				INFO("all data has been sent");
 				gm_state_set(_STATE_DEEP_SLEEP);
 			} else {
-				INFO("still data remaining, starting timer");
+				INFO("still data(%d) remaining, starting timer", global_cfg.storedData);
 				os_timer_setfn(&timer_server_wait,timer_server_wait_cb,NULL);
 				os_timer_arm(&timer_server_wait,GM_SERVER_TRANSMIT_INTERVAL,1);
 			}
@@ -225,7 +229,7 @@ gm_state_run(greemon_state_t gm_run_state){
 
 		case (_STATE_DEEP_SLEEP):
 			INFO("Finished work. Deep sleep, yay.");
-			system_deep_sleep(10*1000*1000); // uint32_t time in us 
+			system_deep_sleep(60*1000*1000); // uint32_t time in us 
 		break;
 
 // --------------------------------------------------------------------------

@@ -218,9 +218,8 @@ gm_server_connect()
 {
 	gm_Data_t* pData = NULL;
 
-	pData = config_pop_data(&global_cfg);	
-
-	if (NULL == pData) {
+	//pData = config_pop_data(&global_cfg);	
+	if (0 == global_cfg.storedData) {
 		espconn_disconnect(&user_tcp_conn);
 		ERR_OUT("nothing to send");
 		return false;
@@ -228,6 +227,7 @@ gm_server_connect()
 		user_ts_connect();
 		return true;
 	}
+
 }
 
 /******************************************************************************
@@ -245,10 +245,17 @@ gm_server_send_data()
 
 	if (NULL == pData) {
 		espconn_disconnect(&user_tcp_conn);
-		ERR_OUT("nothing to send");
+		ERR_OUT("=== End of Demo ===");
+		return false;
 	}
 
-	user_ts_send_data(pData);
+	if (true == user_ts_send_data(pData)) {
+		INFO("success");
+	} else {
+			config_push_data(&global_cfg, pData);
+			INFO("error - restored data");
+			//failures++;
+	}
 	return true;
 }
 
@@ -267,6 +274,7 @@ wifi_handle_event_cb(System_Event_t *evt)
 			INFO("Greemon: Connected to SSID %s. Channel: %d",
 				evt->event_info.connected.ssid,
 				evt->event_info.connected.channel);
+			INFO("Greemon: Waiting for IP address");
 		break;
 		case EVENT_STAMODE_DISCONNECTED:
 			INFO("Greemon: Disconnected from SSID %s. Reason: %d",
@@ -369,6 +377,7 @@ gm_read_sensors() {
 	if (0 == global_cfg.storedData) 
 	{
 		return test_data_add();
+		INFO("Added Test data for demo");
 	} else {
 		return true;
 	}

@@ -156,12 +156,12 @@ user_tcp_sent_cb(void *arg)
 }
 
 /******************************************************************************
- * FunctionName : user_esp_platform_sent
+ * FunctionName : user_esp_platform_hsent
  * Description  : Processing the application data and sending it to the host
  * Parameters   : pespconn -- the espconn used to connetion with the host
  * Returns      : none
 *******************************************************************************/
-void ICACHE_FLASH_ATTR
+bool ICACHE_FLASH_ATTR
 user_ts_send_data(gm_Data_t* pData)
 {
 		struct espconn *pespconn = &user_tcp_conn;
@@ -174,7 +174,7 @@ user_ts_send_data(gm_Data_t* pData)
 
 		if (NULL == pData) {
 			ERR_OUT("no data to send");
-			return;
+			return false;
 		}
 
 		pSendBuffer = (char *)os_zalloc(packet_size);
@@ -185,30 +185,35 @@ user_ts_send_data(gm_Data_t* pData)
 				NULL == pGenBuffer	||
 				NULL == pContBuffer) {
 			ERR_OUT("out of memory");
-			return;		
+			return false;		
 		}
 		os_sprintf(timestamp, epoch_to_str(pData->timestamp));				
 		DBG_OUT("datetime=%s",timestamp);
 
 
-		os_sprintf(pSendBuffer,"POST /update.json HTTP/1.1\r\n");
-		os_sprintf(pGenBuffer, "Host: %d.%d.%d.%d\r\n",
+		os_sprintf(pSendBuffer,"POST /update.json?= HTTP/1.1\r\n");
+		os_sprintf(pGenBuffer, "Host: api.thingspeak.com\r\n"
+/*%d.%d.%d.%d\r\n",
 				user_tcp_conn.proto.tcp->remote_ip[0],
 				user_tcp_conn.proto.tcp->remote_ip[1],
 				user_tcp_conn.proto.tcp->remote_ip[2],
-				user_tcp_conn.proto.tcp->remote_ip[3]);
+				user_tcp_conn.proto.tcp->remote_ip[3]
+*/
+);
 		os_strcat(pSendBuffer,pGenBuffer);
 		os_strcat(pSendBuffer,"Connection: close\r\n");
 		os_sprintf(pGenBuffer,"X-THINGSPEAKAPIKEY: %s\r\n", global_cfg.gm_auth_data.token);
 		os_strcat(pSendBuffer,pGenBuffer);
 		os_strcat(pSendBuffer,"Content-Type: application/x-www-form-urlencoded\r\n");
-		content_length = os_sprintf(pContBuffer,"field1=%d\r\nfield2=%d\r\nfield3=%d\r\nfield4=%d\r\ncreated_at=%s\r\n\r\n",
+		content_length = os_sprintf(pContBuffer,"field1=%d&field2=%d",
 				pData->dht22_moisture,
-				pData->dht22_temperature,
-				pData->bh1750_light,
-				pData->adc_moisture,
-				timestamp);
-		os_sprintf(pGenBuffer, "Content-Length: %d\r\n", content_length);
+				pData->dht22_temperature
+				//pData->bh1750_light,
+				//pData->adc_moisture,
+				//timestamp
+);
+		os_sprintf(pGenBuffer, "Content-Length: %d\r\n\r\n", content_length);
+		os_strcat(pSendBuffer, pGenBuffer);
 		os_strcat(pSendBuffer, pContBuffer);
 
 /*
@@ -229,10 +234,11 @@ user_ts_send_data(gm_Data_t* pData)
 				INFO("sending..");
 				break;
 			default:
-				ERR_OUT("Error-Code: %d", err_code);
-				config_push_data(&global_cfg, pData);
-				INFO("restored data");
 				failures++;
+				ERR_OUT("Error-Code: %d", err_code);
+				return false;
+				//config_push_data(&global_cfg, pData);
+				//INFO("restored data");
 			break;
 		}
 
@@ -240,6 +246,7 @@ user_ts_send_data(gm_Data_t* pData)
 		os_free(pGenBuffer);
 		os_free(pContBuffer);
 		//espconn_disconnect(&user_tcp_conn);
+		return true;
 }
 
 /******************************************************************************

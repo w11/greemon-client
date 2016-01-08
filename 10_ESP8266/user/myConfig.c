@@ -49,12 +49,10 @@ config_print(config_t* config){
 	for (i = 0; i<=config->storedData-1; i++){
 		os_sprintf(timestamp, epoch_to_str(config->gm_data[i].timestamp));		
 	  DBG_OUT("TIME: \t%s", timestamp );
-	  DBG_OUT("MOIST:\t%d.%d", 
-	      (uint8_t) ((0x0F & config->gm_data[i].dht22_moisture) >> 8), 
-	      (uint8_t) (0xF0 & config->gm_data[i].dht22_moisture));
-	  DBG_OUT("TEMP: \t%d.%d", 1,1);
-	  DBG_OUT("LIGHT:\t%d.%d", 1,1);
-	  DBG_OUT("ADC:  \t%d.%d", 1,1);
+	  DBG_OUT("MOIST:\t%d", config->gm_data[i].dht22_moisture);
+	  DBG_OUT("TEMP: \t%d", config->gm_data[i].dht22_temperature);
+	  DBG_OUT("LIGHT:\t%d", config->gm_data[i].bh1750_light); 
+		DBG_OUT("ADC:  \t%d", config->gm_data[i].adc_moisture); 
 	  DBG_OUT("--------------------------");
 	}
 	DBG_OUT("======= END VALUES =========");
@@ -307,7 +305,7 @@ config_push_data(config_t* pConfig, gm_Data_t* data){
   } else {
 		DBG_OUT("PUSH Data[%d]",pConfig->storedData);
 		os_memcpy(pConfig->gm_data+(pConfig->storedData), data, sizeof(gm_Data_t));
-		pConfig->storedData = pConfig->storedData + 1;
+		pConfig->storedData++;
 		DBG_OUT("data now: %u", pConfig->storedData);
 		INFO("remember to save it");
 		return true;
@@ -327,15 +325,18 @@ config_pop_data(config_t* pConfig){
 
 	INFO("POP Data[%d]", pConfig->storedData-1);
 
-	if ( 0 == pConfig->storedData ) return NULL;
-
-	pData = &global_cfg.gm_data[pConfig->storedData-1];
+	if ( -1 == pConfig->storedData ) {
+		pData = NULL;
+	} else {
+		pData = &global_cfg.gm_data[pConfig->storedData-1];
+	}
 
 	if (NULL == pData) {
 		ERR_OUT("empty data storage");
+		return NULL;
 	} else {
-		INFO("returning pointer: %x for position: %u", pData, pConfig->storedData-1);
-		pConfig->storedData = pConfig->storedData-1;
+		INFO("returning pointer: %x for Data[%u]", pData, pConfig->storedData-1);
+		pConfig->storedData--;
 		DBG_OUT("data left in storage: %u", pConfig->storedData)
 	}
 

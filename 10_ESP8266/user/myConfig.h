@@ -40,8 +40,8 @@ typedef enum config_error_t {
 
 typedef struct {
 	uint32_t  	timestamp;          // timestamp
-	int16_t   	dht22_moisture;     // DHT22
-	uint16_t  	dht22_temperature;  // DHT22
+	uint16_t   	dht22_moisture;     // DHT22
+	int16_t  	  dht22_temperature;  // DHT22
 	uint16_t  	bh1750_light;       // BH1750
 	uint16_t  	adc_moisture;       // ADC
 } gm_Data_t;
